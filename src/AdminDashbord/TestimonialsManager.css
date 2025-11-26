@@ -1,0 +1,182 @@
+/* Container & Layout */
+.testimonials-admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem 1rem;
+}
+
+/* Card Styles */
+.card {
+  border-radius: 1.13rem;
+  background: #fff;
+  box-shadow: 0 4px 32px 0 rgba(33,56,99,0.07), 0 1.5px 4px #0d6efd11 !important;
+  border: none;
+}
+.card.h-100 {
+  min-height: 100%;
+}
+.card-body {
+  padding-bottom: 1rem;
+}
+.card .form-floating > input,
+.card .form-floating > textarea {
+  background: #f8f9fa;
+}
+.card .form-label {
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+}
+
+/* Avatar */
+.testimonial-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 4px solid #e9ecef;
+  object-fit: cover;
+  box-shadow: 0 2px 16px #0d6efd18;
+  background: #f7fafd;
+  margin: 0 auto 10px auto;
+}
+.testimonial-avatar-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  padding: 0.23rem;
+  background: #f7fafd;
+  border: 3px solid #dee2e6;
+  box-shadow: 0 2px 12px #0d6efd13;
+}
+
+@media (max-width: 767px) {
+  .testimonials-admin-container {
+    padding: 1.5rem 0.5rem 2.5rem 0.5rem;
+  }
+  .testimonial-avatar, .testimonial-avatar-icon {
+    width: 64px; height: 64px;
+  }
+}
+
+/* Star Rating */
+.star-filled {
+  color: #fdcf2a;
+  filter: drop-shadow(0 1px 2px #0001);
+  font-size: 1.35rem;
+  transition: color 0.13s;
+  margin-right: 0.05em;
+}
+.star-empty {
+  color: #e3e3e3;
+  font-size: 1.35rem;
+  margin-right: 0.05em;
+}
+.star-filled, .star-empty {
+  vertical-align: bottom;
+}
+
+/* Button (Optional override for better click FEEDBACK) */
+.btn {
+  box-shadow: 0 2px 8px #0d6efd0b;
+  font-weight: 500;
+  outline: none;
+  transition: background 0.21s, box-shadow 0.17s;
+}
+.btn-success, .btn-primary {
+  color: #fff !important;
+}
+.btn-sm, .btn.btn-sm {
+  font-size: 0.99rem;
+  padding: 0.28rem 0.85rem;
+}
+
+/* Toasts */
+.toast {
+  border-radius: 0.88rem !important;
+  font-size: 1rem !important;
+  z-index: 2003 !important;
+}
+.toast .toast-body { font-size: 1rem !important; }
+
+/* Gender/Avatar Picker */
+.choose-gender-list,
+.choose-gender-list-admin {
+  display: flex;
+  gap: 1.1rem;
+  padding: 0.5rem 0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.choose-gender-btn {
+  border-radius: 44px!important;
+  background: #fff;
+  border: 2px solid #e9ecef;
+  transition: box-shadow .14s, border .17s, background .13s;
+  box-shadow: 0 1px 7px #0d6efd13;
+  cursor: pointer;
+  padding: 0.55rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.choose-gender-btn.selected, .choose-gender-btn:active, .choose-gender-btn:focus {
+  border: 2px solid #0d6efd;
+  background: #f2f5fb;
+  box-shadow: 0 0 0 1.5px #0d6efd66;
+}
+.choose-gender-btn img {
+  display: block;
+  width: 29px;
+  margin-bottom: 0.4rem;
+}
+
+/* Modal improvements */
+.confirm-photo-modal {
+  background: rgba(0,0,0,0.35);
+  z-index: 999999;
+  display: flex; align-items: center; justify-content: center;
+  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+}
+.confirm-photo-modal-content {
+  background: #fff; border-radius: 12px; padding: 33px 16px; width: 96vw;
+  max-width: 380px; text-align: center;
+  box-shadow: 0 8px 36px #0005;
+}
+.confirm-photo-modal .btn { font-size: 0.99rem; min-width: 80px; margin-bottom: 4px; }
+
+@media (max-width: 600px) {
+  .card { border-radius: 0.7rem; }
+  .confirm-photo-modal-content { padding: 26px 6px; max-width: 97vw;}
+}
+
+/* Form Layout */
+@media (max-width: 990px) {
+  .row.g-3 > .col-sm-5, .row.g-3 > .col-sm-7 {
+    flex: unset;
+    width: 100%;
+  }
+}
+@media (max-width: 767px) {
+  .row.g-3 > [class^='col'] { width: 100% !important; }
+  .card { margin-bottom: 1.2rem; }
+}
+
+/* Testimonials Card Grid */
+@media (max-width: 1200px) {
+  .testimonials-admin-container .row > .col-md-4 { max-width: 50%; flex: 0 0 50%; }
+}
+@media (max-width: 767px) {
+  .testimonials-admin-container .row > .col-md-4 { max-width: 100%; flex: 0 0 100%; }
+}
+
+.card .badge.bg-warning, .card .badge.bg-warning.text-dark {
+  font-size: 0.89rem !important;
+  margin-top: 2px;
+  font-weight: 500;
+  border-radius: 2rem;
+  box-shadow: 0 3px 12px #ffa70017;
+}
+
+/* Clean Up Scrollbars For Container On Mobile */
+body, html {
+  overflow-x: hidden;
+}

@@ -1,0 +1,171 @@
+/*** Hero Header ***/
+/* Hero Header Modernized */
+.hero-header {
+    margin-top: 0;
+    padding-top: 120px;
+    padding-bottom: 60px;
+    min-height: 70vh;
+    position: relative;
+    color: #fff;
+    overflow: hidden;
+}
+
+.hero-overlay {
+    background: rgba(20, 30, 48, 0.7); /* dark overlay for contrast */
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.hero-header .container {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-title {
+    font-family: 'Lexend', 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 0 4px 24px rgba(0,0,0,0.25);
+}
+
+.hero-title .text-primary {
+    color: var(--bs-primary, #0d6efd) !important;
+}
+
+.hero-subtitle {
+    font-weight: 400;
+    color: #e0e0e0;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+.hero-cta {
+    font-size: 1.1rem;
+    padding: 0.75rem 2.5rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.header-carousel {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 0 0 0;
+    position: relative;
+}
+
+.header-carousel img {
+    width: 480px;
+    max-width: 96vw;
+    height: 320px;
+    object-fit: cover;
+    border-radius: 32px 32px 16px 16px / 40px 40px 16px 16px;
+    box-shadow: 0 12px 36px rgba(13,110,253,0.18), 0 2px 12px rgba(0,0,0,0.10);
+    transition: transform 0.4s cubic-bezier(.4,2,.6,1), box-shadow 0.4s, border 0.3s, opacity 0.6s cubic-bezier(.4,2,.6,1);
+    border: 3px solid #e3f2fd;
+    background: linear-gradient(120deg, #f8f9fa 60%, #e3f2fd 100%);
+    opacity: 0;
+    animation: hero-img-fadein 0.8s cubic-bezier(.4,2,.6,1) forwards;
+@keyframes hero-img-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+}
+
+.header-carousel img:hover {
+    transform: scale(1.04) rotate(-1deg);
+    box-shadow: 0 24px 64px rgba(13,110,253,0.22), 0 8px 32px rgba(0,0,0,0.12);
+    border-color: #0d6efd;
+}
+
+.header-carousel::before {
+    position: absolute;
+    content: "";
+    top: 0;
+    right: 0;
+    width: calc(50% + 45px);
+    height: 100%;
+    background: var(--bs-primary);
+    z-index: -1;
+    opacity: 0.08;
+}
+
+/* Remove dot navigation styles since not used */
+/*
+.header-carousel .owl-dots,
+.header-carousel .owl-dot,
+.header-carousel .owl-dot.active {
+    display: none !important;
+}
+*/
+
+.hero-info-row {
+    margin-top: 2rem;
+}
+
+.hero-info-card {
+    background: rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    color: #fff;
+    min-height: 120px;
+    transition: background 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.hero-info-card:hover {
+    background: rgba(13,110,253,0.12);
+    box-shadow: 0 4px 24px rgba(13,110,253,0.12);
+}
+.icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bs-primary, #0d6efd);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(13,110,253,0.12);
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .hero-header {
+        padding-top: 80px;
+        padding-bottom: 30px;
+    }
+    .header-carousel {
+        flex-direction: column;
+        gap: 16px;
+        padding: 24px 0;
+    }
+    .header-carousel img {
+        width: 98vw;
+        height: 180px;
+        border-radius: 18px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .hero-header {
+        padding-top: 60px;
+        padding-bottom: 10px;
+    }
+    .header-carousel img {
+        height: 120px;
+        border-radius: 10px;
+        width: 98vw;
+    }
+    .hero-title {
+        font-size: 2rem;
+    }
+    .hero-info-card {
+        min-height: 90px;
+        font-size: 0.95rem;
+    }
+}
+
+/* All font-family rules are now handled globally in App.css with Lexend */

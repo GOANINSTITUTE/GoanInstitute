@@ -1,0 +1,232 @@
+/* AdminPanel Custom Styling */
+
+/* General Layout */
+body {
+  background: #f5f6fa;
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+
+/* AdminPanel - BEST sticky header style */
+.sticky-top {
+    top: 66px !important;
+  background: linear-gradient(90deg, #2562e5 1%, #3390f8 99%) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 24px 0 #2359c566, 0 1.5px 0 #1c357e33;
+  padding: 22px 32px 22px 32px !important;
+  z-index: 1300 !important;
+  border-bottom: 1.5px solid #e2e6ee !important;
+  position: sticky !important;
+  top: 0;  /* makes sure it truly sticks */
+  transition: box-shadow .24s, background .22s;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.sticky-top h2 {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #fff !important;
+  letter-spacing: 0.01em;
+}
+
+.sticky-top .d-flex.align-items-center.me-3 img {
+  border: 2px solid #fff;
+  box-shadow: 0 2px 10px #349af015;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.sticky-top .d-flex.align-items-center.me-3:hover img {
+  border-color: #ffd903;
+  box-shadow: 0 4px 18px #2562e533;
+}
+
+.sticky-top .d-flex.align-items-center.me-3 span {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.11rem;
+}
+
+.sticky-top .btn-danger {
+  background: #fc5252 !important;
+  border: none !important;
+  color: #fff;
+  box-shadow: 0 2px 8px #fc52523a;
+  transition: background .17s;
+}
+.sticky-top .btn-danger:hover,
+.sticky-top .btn-danger:focus {
+  background: #c32b2b !important;
+}
+
+@media (max-width: 767.98px) {
+  .sticky-top {
+    padding: 13px 10px !important;
+    top: 66px !important;         /* If your mobile navbar is shorter! Adjust as needed */
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    min-height: 64px;
+    box-shadow: 0 2px 18px 0 #2359c532, 0 1.5px 0 #1c357e33;
+    gap: 10px;
+  }
+  .sticky-top h2 {
+    font-size: 1.3rem;
+    margin-bottom: 2px;
+    letter-spacing: 0.03em;
+  }
+  .sticky-top .d-flex.align-items-center.me-3 {
+    margin-right: 0 !important;
+    margin-bottom: 6px;
+  }
+  .sticky-top .d-flex.align-items-center.me-3 img {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .sticky-top .btn-danger {
+    padding: 7px 16px !important;
+    font-size: 1rem;
+    margin-top: 6px;
+  }
+}
+
+/* Optional: Extra tiny screens */
+@media (max-width: 420px) {
+  .sticky-top {
+    padding: 8px 3vw !important;
+    min-height: 50px;
+  }
+  .sticky-top h2 {
+    font-size: 1.02rem;
+  }
+}
+
+/* Header */
+h2 {
+  font-size: 2rem;
+  color: #253858;
+  font-weight: bold;
+  margin: 0;
+}
+
+.option-card {
+  border-radius: 12px;
+  border: 1.5px solid #e4e7ef;
+  background: #fff;
+  transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
+  cursor: pointer;
+}
+.option-card:hover, .option-card.border-primary {
+  box-shadow: 0px 8px 28px 0px #46658517;
+  border-color: #267af6;
+  transform: scale(1.02);
+}
+
+/* Option Icons */
+.option-card div[style*="font-size: 40px"] {
+  color: #267af6;
+  margin-bottom: 6px;
+}
+
+/* Option Card Title */
+.option-card h5 {
+  font-size: 1.13rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: #212b36;
+}
+
+/* User/Avatar Section */
+.d-flex.align-items-center.me-3 img {
+  box-shadow: 0 2px 8px rgba(38, 122, 246, 0.08);
+  transition: border-color 0.2s;
+}
+.d-flex.align-items-center.me-3:hover img {
+  border-color: #267af6;
+}
+.d-flex.align-items-center.me-3 span {
+  color: #212b36;
+}
+
+/* Modal enhancements */
+.modal-backdrop {
+  background: rgba(23, 38, 75, 0.22);
+}
+.modal-content {
+  border-radius: 14px;
+  border: none;
+  box-shadow: 0 18px 50px 0 #232f4111;
+}
+.modal-title {
+  color: #202846;
+  font-weight: 700;
+}
+.btn-close:focus { outline: none; }
+.modal-footer .btn-secondary {
+  background: #f0f4fb;
+  color: #212b36;
+  border: none;
+}
+.modal-footer .btn-secondary:hover {
+  background: #e1eaff;
+  color: #267af6;
+}
+.btn.btn-primary {
+  background: #267af6;
+  border: none;
+}
+.btn.btn-primary:hover, .btn.btn-primary:focus {
+  background: #175ad5;
+}
+.alert-danger {
+  color: #a02100;
+  background: #ffe4e1;
+  border-color: #ffdeda;
+}
+
+/* Responsive Options Grid */
+@media (max-width: 768px) {
+  .container {
+    max-width: 97%;
+  }
+  .option-card {
+    padding: 16px !important;
+  }
+}
+@media (max-width: 576px) {
+  .option-card h5 {
+    font-size: 1rem;
+  }
+  .option-card div[style*="font-size: 40px"] {
+    font-size: 32px !important;
+  }
+}
+
+/* Greeting Paragraph */
+.lead {
+  font-size: 1.18rem;
+  color: #566178;
+}
+
+/* Default message */
+.text-muted h4 {
+  color: #78829b !important;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+/* Logout button */
+.btn-danger {
+  background: #e93d40 !important;
+  border: none !important;
+  font-weight: 500;
+  box-shadow: 0 2px 6px #f3555533;
+}
+.btn-danger:hover, .btn-danger:focus {
+  background: #ba2528 !important;
+}
+
+@media (max-width: 768px){
+  .btn-danger {
+  margin-left: 95px;
+}  
+}

@@ -1,0 +1,9 @@
+.responsive-padding {
+  padding-top: 80px; /* Default for desktop */
+}
+
+@media (max-width: 767.98px) { /* Bootstrap's breakpoint for mobile */
+  .responsive-padding {
+    padding-top: 30px; /* For mobile screens */
+  }
+}

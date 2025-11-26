@@ -1,0 +1,96 @@
+/* About Page Styles */
+
+.about-page {
+  background: #f8f9fa;
+}
+
+
+
+/* Organization Profile */
+.about-profile-logo {
+  max-width: 320px;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px #0d6efd22;
+}
+
+/* Core Values */
+.icon-circle {
+  font-size: 36px;
+  color: #0d6efd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e3f2fd;
+  margin-bottom: 8px;
+}
+
+/* Team Section */
+.about-team-img {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #0d6efd;
+  margin-bottom: 12px;
+}
+
+/* Call to Action */
+.about-cta {
+  background: linear-gradient(90deg, #d3df66 60%, #0d6efd 100%);
+  color: #fff;
+  position: relative;
+}
+.about-cta .container {
+  position: relative;
+  z-index: 2;
+}
+.about-cta-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.07;
+  background-image: url('../../Images/logodarvik.png') center/contain no-repeat;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Section Headings */
+.about-section-title {
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Misc */
+.bg-pink {
+  background: linear-gradient(90deg, #d3df66 60%, #0d6efd 100%) !important;
+  color: #fff !important;
+}
+.text-primary {
+  color: #0d6efd !important;
+}
+.text-success {
+  color: #198754 !important;
+}
+
+/* Responsive tweaks */
+@media (max-width: 767px) {
+  .about-hero {
+    min-height: 220px;
+    padding: 2rem 0;
+  }
+  .about-profile-logo {
+    max-width: 220px;
+  }
+  .about-team-img {
+    width: 70px;
+    height: 70px;
+  }
+}
+
