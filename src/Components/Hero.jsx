@@ -1,159 +1,203 @@
-import React, { useEffect, useState } from 'react';
-import "./Hero.css";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
+import React, { useEffect, useState } from "react";
 import { db } from "../firebase-config";
 import { collection, getDocs } from "firebase/firestore";
-import { Carousel } from 'react-responsive-carousel';
 
 const Hero = () => {
-  const HeroLoader = () => (
-    <div style={{ minHeight: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-      <div style={{ position: 'relative', width: 80, height: 80 }}>
-        <div style={{
-          position: 'absolute',
-          width: 80,
-          height: 80,
-          borderRadius: '50%',
-          border: '6px solid #0d6efd',
-          borderTop: '6px solid #f3268c',
-          animation: 'hero-spin 1.2s linear infinite',
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          background: 'linear-gradient(90deg, #0d6efd 60%, #f3268c 100%)',
-          boxShadow: '0 0 24px #0d6efd44',
-          animation: 'hero-pulse 1.2s ease-in-out infinite',
-        }} />
-        <style>{`
-          @keyframes hero-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          @keyframes hero-pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.15); opacity: 0.7; }
-          }
-        `}</style>
-      </div>
-    </div>
-  );
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [heroBg, setHeroBg] = useState("");
+  const [heroMedia, setHeroMedia] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const fetchImages = async () => {
+    const fetchMedia = async () => {
       try {
-        setLoading(true);
-        // Fetch hero images
-        const snapshot = await getDocs(collection(db, "hero_images"));
-        const data = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(item => item.imageUrl && typeof item.imageUrl === "string" && item.imageUrl.trim() !== "");
-        setImages(data);
-        // Fetch hero background
-        const bgSnapshot = await getDocs(collection(db, "hero-background"));
-        // Use the first document's url field if available
-        const bgUrl = bgSnapshot.docs.length > 0 ? bgSnapshot.docs[0].data().url : "";
-        setHeroBg(bgUrl);
+        const querySnapshot = await getDocs(collection(db, "hero-backgrounds"));
+        const mediaList = querySnapshot.docs
+          .map((doc) => doc.data())
+          .filter((item) => item.url);
+        setHeroMedia(mediaList);
       } catch (error) {
-        console.error("Error fetching hero images/background:", error);
-      } finally {
-        setLoading(false);
+        console.error("❌ Error fetching hero media:", error);
       }
     };
-    fetchImages();
+    fetchMedia();
   }, []);
+
+  // Auto-slide every 5 seconds
+  useEffect(() => {
+    if (heroMedia.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % heroMedia.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [heroMedia]);
+
+  // Trigger animations on load
+  useEffect(() => {
+    document.querySelectorAll(".hero-title, .hero-subtitle, .hero-card")
+      .forEach(el => el.style.animationPlayState = "running");
+  }, []);
+
+  // Keyframe animation objects
+  const fadeUpAnimation = {
+    animationName: "fadeUp",
+    animationDuration: "1.2s",
+    animationTimingFunction: "ease-out",
+    animationFillMode: "forwards",
+    opacity: 0,
+    transform: "translateY(20px)",
+    animationPlayState: "paused",
+  };
+
+  const fadeUpAnimationSubtitle = { ...fadeUpAnimation, animationDuration: "1.6s" };
+  const fadeUpCardAnimation = (delay) => ({
+    animationName: "fadeUpCards",
+    animationDuration: "1.2s",
+    animationTimingFunction: "ease-out",
+    animationFillMode: "forwards",
+    animationDelay: delay,
+    opacity: 0,
+    transform: "translateY(30px)",
+    animationPlayState: "paused",
+  });
+
+  // Keyframes globally
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @keyframes fadeUp {
+        0% { opacity: 0; transform: translateY(25px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeUpCards {
+        0% { opacity: 0; transform: translateY(40px); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  // Detect screen width for responsive styles
+  const isMobile = window.innerWidth <= 768;
 
   return (
     <section
-      className="hero-header position-relative d-flex align-items-center justify-content-center"
-      style={heroBg ? { background: `url(${heroBg}) center center/cover no-repeat` } : undefined}
+      className="position-relative d-flex align-items-center justify-content-center text-light hero-section"
+      style={{
+        height: isMobile ? "auto" : "100vh",
+        minHeight: "550px",
+        overflow: "hidden",
+        paddingTop: isMobile ? "80px" : "0",
+        paddingBottom: isMobile ? "80px" : "0",
+      }}
     >
-      <div className="hero-overlay position-absolute w-100 h-100"></div>
-      <div className="container py-5 position-relative z-2">
-        <div className="row g-5 align-items-center mb-4">
-          <div className="col-lg-6 text-light">
-            <h1 className="display-3 fw-bold mb-3 hero-title">
-              KIND HEARTS IGNITE <span className="text-primary">TRUE</span> COMPASSION
-            </h1>
-            <h5 className="mb-4 hero-subtitle">
-              We serve meals to many.
-            </h5>
-            <a href="about" className="btn btn-primary btn-lg shadow hero-cta">Learn More</a>
+      {/* Background */}
+      <div className="position-absolute top-0 start-0 w-100 h-100" style={{ zIndex: 1 }}>
+        {heroMedia.map((item, i) => (
+          <div
+            key={i}
+            className="position-absolute w-100 h-100"
+            style={{
+              opacity: i === currentIndex ? 1 : 0,
+              transition: "opacity 2s ease-in-out",
+            }}
+          >
+            {item.type === "video" ? (
+            <video
+  src={item.url}
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="metadata"
+  poster={item.posterUrl || 'https://res.cloudinary.com/dgxhp09em/image/upload/v1763817654/xseg5az746etyjfuwsho.jpg'}  // optional poster image URL
+  className="w-100 h-100"
+  style={{ objectFit: "cover" }}
+/>
+
+
+            ) : (
+              <div
+                style={{
+                  backgroundImage: `url(${item.url})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  width: "100%",
+                  height: "100%",
+                }}
+              ></div>
+            )}
           </div>
-          <div className="col-lg-6">
-            <Carousel
-              autoPlay
-              infiniteLoop
-              showThumbs={false}
-              showStatus={false}
-              showArrows={false}
-              className="header-carousel animated fadeIn"
+        ))}
+      </div>
+
+      {/* Overlay */}
+      <div
+        className="position-absolute top-0 start-0 w-100 h-100 " 
+        style={{
+          background: "rgba(0, 0, 0, 0.61)",
+          backdropFilter: "blur(0.5px)",
+          zIndex: 2,
+        }}
+      ></div>
+
+      {/* Content */}
+      <div
+        className="container position-relative text-center text-md-start px-3 px-md-5 hero-content "
+        style={{
+          zIndex: 3,
+        }}
+      >
+        {/* Titles */}
+        <div className="row align-items-center mb-5">
+          <div className="col-12 text-center ">
+            <h1
+              className="fw-bold mb-5 hero-title text-eggshell"
+              style={{
+                fontFamily: "'Plus Jakarta Sans', serif",
+                fontSize: isMobile ? "1.0rem" : "clamp(0.5rem, 4vw, 1.5rem)",
+                lineHeight: 1.3,
+                letterSpacing: "0.1em",
+                ...fadeUpAnimation,
+              }}
             >
-              {loading ? (
-                <HeroLoader />
-              ) : images.length > 0 ? (
-                images.map((item, idx) => (
-                  <div key={item.id || idx}>
-                    <img
-                      className="img-fluid hero-fadein"
-                      src={item.imageUrl}
-                      alt={item.title || `Slide ${idx + 1}`}
-                      style={{ opacity: 0, transition: 'opacity 0.7s cubic-bezier(.4,2,.6,1)' }}
-                      onLoad={e => { e.target.style.opacity = 1; }}
-                      onError={e => {
-                        e.target.onerror = null;
-                        e.target.src = "/logo.svg";
-                        e.target.alt = "Image not found";
-                        e.target.style.objectFit = "contain";
-                        e.target.style.background = "#f8d7da";
-                        e.target.style.opacity = 1;
-                      }}
-                    />
-                    {item.title && <h5 className="mt-2 text-center text-dark">{item.title}</h5>}
-                    {item.description && <p className="text-center text-muted small">{item.description}</p>}
-                  </div>
-                ))
-              ) : (
-                <div>
-                  <img className="img-fluid" src="/logo.svg" alt="No images found" />
-                </div>
-              )}
-            </Carousel>
-          </div>
+              GOAN INSTITUTE INTERNATIONAL CONSOCIATION OF EDUCATION
+            </h1>
+            <div
+  style={{
+    height: "1px",
+    margin: "1px auto",
+    width: "60%",
+    background: "linear-gradient(90deg, transparent, #ffc107, transparent)",
+  }}
+/>
+
+            <h2
+  className="fw-bold mb-3 text-accent hero-subtitle"
+  style={{
+    fontFamily: "'Roboto Slab', serif",
+    fontSize: isMobile ? "0.95rem" : "clamp(1.75rem, 5vw, 2.5rem)",
+    lineHeight: 1.3,
+    letterSpacing: "0.08em",
+    position: "relative",
+    ...fadeUpAnimationSubtitle,
+  }}
+>
+<div
+  style={{
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "10px",
+    color: "var(--text-accent)"
+  }}
+>
+  <span>Be the Leading Light to Lead</span>
+</div>
+
+</h2>
+</div>
         </div>
-        <div className="row g-4 hero-info-row">
-          <div className="col-6 col-md-3">
-            <div className="hero-info-card d-flex flex-column align-items-center p-3">
-              <div className="icon-circle mb-2"><i className="bi bi-heart-fill"></i></div>
-              <span>Serving Humanity</span>
-            </div>
-          </div>
-          <div className="col-6 col-md-3">
-            <div className="hero-info-card d-flex flex-column align-items-center p-3">
-              <div className="icon-circle mb-2"><i className="bi bi-people-fill"></i></div>
-              <span>Empowering Communities</span>
-            </div>
-          </div>
-          <div className="col-6 col-md-3">
-            <div className="hero-info-card d-flex flex-column align-items-center p-3">
-              <div className="icon-circle mb-2"><i className="bi bi-person-heart"></i></div>
-              <span>Spreading Kindness</span>
-            </div>
-          </div>
-          <div className="col-6 col-md-3">
-            <div className="hero-info-card d-flex flex-column align-items-center p-3">
-              <div className="icon-circle mb-2"><i className="bi bi-book-fill"></i></div>
-              <span>Hope for All</span>
-            </div>
-          </div>
-        </div>
+
+
       </div>
     </section>
   );

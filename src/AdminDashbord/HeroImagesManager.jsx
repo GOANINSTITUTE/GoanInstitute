@@ -1,130 +1,140 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase-config";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 
-function HeroImagesManager() {
+function HeroMediaManager() {
   const [items, setItems] = useState([]);
-  const [heroBg, setHeroBg] = useState("");
 
   useEffect(() => {
     fetchItems();
-    fetchHeroBg();
   }, []);
 
+  // 🔹 Fetch all hero background media
   const fetchItems = async () => {
     try {
-      const snapshot = await getDocs(collection(db, "hero_images"));
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const snapshot = await getDocs(collection(db, "hero-backgrounds"));
+      const data = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
       setItems(data);
     } catch (error) {
-      console.error("Error fetching hero images:", error);
+      console.error("❌ Error fetching hero media:", error);
     }
   };
 
-  const fetchHeroBg = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "hero-background"));
-      const bgUrl = snapshot.docs.length > 0 ? snapshot.docs[0].data().url : "";
-      setHeroBg(bgUrl);
-    } catch (error) {
-      console.error("Error fetching hero background:", error);
-    }
-  };
-
+  // 🔹 Upload new hero background (image or video)
   const handleUpload = () => {
     const myWidget = window.cloudinary.createUploadWidget(
       {
-        cloudName: 'dgxhp09em',
-        uploadPreset: 'unsigned_preset'
+        cloudName: "dgxhp09em",
+        uploadPreset: "unsigned_preset",
+        sources: ["local", "url", "camera"],
+        multiple: false,
+        maxFileSize: 50000000, // 50MB
+        resourceType: "auto", // <--- allows both image and video
       },
       async (error, result) => {
         if (!error && result && result.event === "success") {
           try {
-            await addDoc(collection(db, "hero_images"), {
-              imageUrl: result.info.secure_url
+            const newUrl = result.info.secure_url;
+            const mediaType = result.info.resource_type; // "image" or "video"
+            await addDoc(collection(db, "hero-backgrounds"), {
+              url: newUrl,
+              type: mediaType,
+              uploadedAt: new Date(),
             });
-            alert("Image added!");
+            alert("✅ Media added successfully!");
             fetchItems();
-          } catch (error) {
-            console.error("Error saving hero image:", error);
-            alert("Failed to save!");
+          } catch (err) {
+            console.error("🔥 Firestore error:", err);
+            alert("Failed to save media. Check console for details.");
           }
+        } else if (error) {
+          console.error("❌ Cloudinary upload error:", error);
         }
       }
     );
     myWidget.open();
   };
 
-  // Upload/change hero background
-  const handleBgUpload = () => {
-    const myWidget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: 'dgxhp09em',
-        uploadPreset: 'unsigned_preset'
-      },
-      async (error, result) => {
-        if (!error && result && result.event === "success") {
-          try {
-            // Remove previous background if exists
-            const snapshot = await getDocs(collection(db, "hero-background"));
-            if (snapshot.docs.length > 0) {
-              await Promise.all(snapshot.docs.map(docSnap => docSnap.ref.delete()));
-            }
-            // Add new background
-            await addDoc(collection(db, "hero-background"), {
-              url: result.info.secure_url
-            });
-            alert("Hero background updated!");
-            fetchHeroBg();
-          } catch (error) {
-            console.error("Error saving hero background:", error);
-            alert("Failed to save background!");
-          }
-        }
-      }
-    );
-    myWidget.open();
-  };
-
+  // 🔹 Delete hero media
   const handleDelete = async (id) => {
     try {
-      await deleteDoc(doc(db, "hero_images", id));
+      await deleteDoc(doc(db, "hero-backgrounds", id));
       fetchItems();
+      alert("🗑️ Media deleted!");
     } catch (error) {
-      console.error("Error deleting hero image:", error);
+      console.error("❌ Error deleting hero media:", error);
     }
   };
 
   return (
     <div className="container mt-4">
-      <h3 className="mb-3">Hero Images Manager</h3>
-      <button className="btn btn-success mb-3" onClick={handleUpload}>Upload New Image</button>
+      <h3 className="mb-3 fw-bold text-primary">Hero Background Media</h3>
 
+      {/* Upload button */}
+      <button
+        className="btn btn-success mb-4 px-4 py-2"
+        style={{ borderRadius: "10px" }}
+        onClick={handleUpload}
+      >
+        <i className="bi bi-cloud-upload me-2"></i> Upload Image / Video
+      </button>
+
+      {/* Media Grid */}
       <div className="row">
-        {items.map(item => (
-          <div key={item.id} className="col-md-4 mb-3">
-            <div className="card">
-              <img src={item.imageUrl} className="card-img-top" alt="Hero" />
-              <div className="card-body">
-                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>Delete</button>
+        {items.length > 0 ? (
+          items.map((item) => (
+            <div key={item.id} className="col-md-4 col-lg-3 mb-4">
+              <div
+                className="card shadow-sm border-0"
+                style={{
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  backgroundColor: "#f8f9fa",
+                }}
+              >
+                {item.type === "video" ? (
+                  <video
+                    src={item.url}
+                    className="card-img-top"
+                    controls
+                    style={{ height: "180px", objectFit: "cover" }}
+                  />
+                ) : (
+                  <img
+                    src={item.url}
+                    className="card-img-top"
+                    alt="Hero Background"
+                    style={{ height: "180px", objectFit: "cover" }}
+                  />
+                )}
+                <div className="card-body text-center">
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    <i className="bi bi-trash me-1"></i> Delete
+                  </button>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="text-muted text-center mt-4">
+            <p>No media added yet. Upload some!</p>
           </div>
-        ))}
+        )}
       </div>
-
-      <hr className="my-4" />
-      <h4 className="mb-3">Hero Background Manager</h4>
-      <div className="mb-3">
-        <button className="btn btn-primary" onClick={handleBgUpload}>Change Hero Background</button>
-      </div>
-      {heroBg && (
-        <div className="mb-3">
-          <img src={heroBg} alt="Hero Background" style={{ maxWidth: 480, borderRadius: 12, boxShadow: "0 2px 12px #0d6efd22" }} />
-        </div>
-      )}
     </div>
   );
 }
 
-export default HeroImagesManager;
+export default HeroMediaManager;

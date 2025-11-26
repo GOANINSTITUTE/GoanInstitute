@@ -1,6 +1,6 @@
 .news-detail-page {
   min-height: 100vh;
-  background: #f7f9fa;
+  background: var(bg-background);
   padding: 2rem 0 4rem 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #222;
@@ -10,7 +10,7 @@
   width: 100%;
   margin: 0 auto;
   padding: 3rem 2vw 3rem 2vw;
-  background: white;
+  background: bg-background;
   border-radius: 1rem;
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.10);
   display: flex;

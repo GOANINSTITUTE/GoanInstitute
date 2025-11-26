@@ -1,0 +1,69 @@
+.footer-main {
+  background: linear-gradient(var(--primary) );
+  color: var(--background);
+  padding-top: 3rem;
+  padding-bottom: 1rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.footer-logo {
+  height: 48px;
+  margin-bottom: 8px;
+}
+
+.footer-title {
+  font-size: 18px;
+}
+
+.footer-tagline {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.footer-heading {
+  color: var(--accent);
+}
+
+.footer-link {
+  color: var(--background);
+  font-size: 15px;
+  opacity: 0.95;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+  color: var(--accent);
+}
+
+.footer-link.dotted {
+  text-decoration: underline dotted;
+}
+
+.footer-link.underline {
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.footer-social a {
+  color: var(--background);
+  font-size: 22px;
+  transition: color 0.3s ease;
+}
+.footer-social a:hover {
+  color: var(--accent);
+}
+
+.footer-divider {
+  border-color: rgba(255, 255, 255, 0.15);
+  margin: 1.5rem 0 1rem;
+}
+
+.footer-bottom {
+  font-size: 14px;
+  opacity: 0.85;
+}
+.footer-bottom span {
+  font-size: 13px;
+  opacity: 0.8;
+}

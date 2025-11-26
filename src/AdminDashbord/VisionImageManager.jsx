@@ -1,0 +1,153 @@
+import React, { useState, useEffect } from "react";
+import { db } from "../firebase-config";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+function Notification({ message, type, onClose }) {
+  if (!message) return null;
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 24,
+        right: 24,
+        zIndex: 2000,
+        minWidth: 220,
+        padding: "12px 24px",
+        borderRadius: 8,
+        background: type === "success" ? "#28a745" : "#dc3545",
+        color: "#fff",
+        fontWeight: 600,
+        boxShadow: "0 4px 24px rgba(0,0,0,0.13)",
+        fontSize: 16,
+        transition: "opacity 0.3s",
+      }}
+      role="alert"
+    >
+      {message}
+      <button
+        onClick={onClose}
+        style={{
+          background: "none",
+          border: "none",
+          color: "#fff",
+          marginLeft: 16,
+          fontSize: 18,
+          cursor: "pointer",
+        }}
+        aria-label="Close notification"
+      >
+        &times;
+      </button>
+    </div>
+  );
+}
+
+function VisionImageManager() {
+  const [image, setImage] = useState(null);
+  const [notification, setNotification] = useState({ message: "", type: "success" });
+  const docRef = doc(db, "visionImages", "visionImage"); // single document
+
+  useEffect(() => {
+    fetchVisionImage();
+  }, []);
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification({ message: "", type }), 2500);
+  };
+
+  const fetchVisionImage = async () => {
+    try {
+      const snapshot = await getDoc(docRef);
+      if (snapshot.exists()) setImage(snapshot.data().imageUrl);
+      else setImage(null);
+    } catch (error) {
+      console.error("Error fetching image:", error);
+      showNotification("Error fetching image", "error");
+    }
+  };
+
+  const handleUpload = async () => {
+    const myWidget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: "dgxhp09em",
+        uploadPreset: "unsigned_preset",
+      },
+      async (error, result) => {
+        if (!error && result && result.event === "success") {
+          try {
+            const newImage = result.info.secure_url;
+
+            // If no image yet, create one. Otherwise, update existing.
+            const snapshot = await getDoc(docRef);
+            if (snapshot.exists()) {
+              await updateDoc(docRef, {
+                imageUrl: newImage,
+                updatedAt: serverTimestamp(),
+              });
+            } else {
+              await setDoc(docRef, {
+                imageUrl: newImage,
+                uploadedAt: serverTimestamp(),
+              });
+            }
+
+            showNotification("Image uploaded successfully!", "success");
+            setImage(newImage);
+          } catch (err) {
+            console.error("Error saving image:", err);
+            showNotification("Failed to save image", "error");
+          }
+        } else if (error) {
+          console.error("Cloudinary error:", error);
+          showNotification("Upload failed!", "error");
+        }
+      }
+    );
+    myWidget.open();
+  };
+
+  return (
+    <div className="container mt-4">
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={() => setNotification({ message: "", type: notification.type })}
+      />
+
+      <h3 className="mb-3">Vision Mission Background Image Manager</h3>
+
+      <div className="mb-3">
+        <button className="btn btn-success" onClick={handleUpload}>
+          {image ? "Change Background Image" : "Upload Background Image"}
+        </button>
+      </div>
+
+      <div className="mt-4 mb-5 text-center">
+        {image ? (
+          <div className="card mx-auto" style={{ maxWidth: "400px" }}>
+            <img
+              src={image}
+              className="card-img-top"
+              alt="Vision"
+              style={{ maxHeight: "300px", objectFit: "cover" }}
+            />
+            <div className="card-body">
+              <p className="card-text">Current Background Image</p>
+            </div>
+          </div>
+        ) : (
+          <p>No Vision image uploaded yet.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default VisionImageManager;

@@ -1,77 +1,177 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-
-
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase-config';
+import AnimatedHero from '../Components/AnimatedHero';
+import PageTransition from '../Components/PageTransition';
 
 function Login() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState({ message: '', type: '' });
   const navigate = useNavigate();
   const auth = getAuth();
 
+  // Toast helper
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: '', type: '' }), 4000);
+  };
+
+  // Helper function to get email from identifier (name or email)
+  const getEmailFromIdentifier = async (identifier) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (emailRegex.test(identifier)) {
+      // Identifier is an email, check if it exists in Firestore
+      const q = query(collection(db, "adminUsers"), where("email", "==", identifier));
+      const snapshot = await getDocs(q);
+      return snapshot.empty ? null : identifier;
+    } else {
+      // Identifier is a name, look up email in Firestore
+      const q = query(collection(db, "adminUsers"), where("name", "==", identifier));
+      const snapshot = await getDocs(q);
+      return snapshot.empty ? null : snapshot.docs[0].data().email;
+    }
+  };
+
+  // Handle login
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const emailToUse = await getEmailFromIdentifier(identifier);
+      
+      if (!emailToUse) {
+        showToast("You are not an authenticated user of Darvik Foundation. Please contact admin.", "error");
+        return;
+      }
+
+      await signInWithEmailAndPassword(auth, emailToUse, password);
+      showToast("Logged in successfully!", "success");
       navigate('/admin');
     } catch (err) {
-      setError(err.message);
+      if (err.code === "auth/invalid-credential" || err.code === "auth/invalid-login-credentials") {
+        showToast("Invalid login credentials. Please try again.", "error");
+      } else {
+        showToast(err.message, "error");
+      }
+    }
+  };
+
+  // Handle forgot password - FIXED VERSION
+  const handleForgotPassword = async () => {
+    if (!identifier) {
+      showToast("Please enter your email or name first.", "error");
+      return;
+    }
+
+    try {
+      const emailToUse = await getEmailFromIdentifier(identifier);
+      
+      if (!emailToUse) {
+        showToast("You are not an authenticated user of Darvik Foundation. Please contact admin.", "error");
+        return;
+      }
+
+      // Send password reset email only if user is authenticated
+      await sendPasswordResetEmail(auth, emailToUse);
+      showToast(`Password reset link has been sent to ${emailToUse}. Check your inbox.`, "success");
+    } catch (err) {
+      showToast("Something went wrong. Please try again later.", "error");
     }
   };
 
   return (
-    <div className="login-bg d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '100vh' }}>
-      <div className="card p-4 shadow" style={{ maxWidth: 400, width: '100%', borderRadius: 18, border: 'none' }}>
-        <div className="text-center mb-4">
-          <img src="/logodarvik.png" alt="Darvik Foundation" style={{ width: 64, height: 64, borderRadius: 12, marginBottom: 8 }} />
-          <h2 className="mb-1" style={{ color: "#cdf326ff", fontWeight: 700 }}>Admin Login</h2>
-          <div className="mb-2" style={{ color: "#0d6efd", fontWeight: 500, fontSize: 18 }}>Darvik Foundation</div>
-        </div>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="mb-3">
-            <label className="form-label" style={{ color: "#0d6efd", fontWeight: 600 }}>Email</label>
-            <input type="email" className="form-control" value={email} onChange={e => setEmail(e.target.value)} required />
-          </div>
-          <div className="mb-3">
-            <label className="form-label" style={{ color: "#0d6efd", fontWeight: 600 }}>Password</label>
-            <div className="input-group">
-              <input
-                type={showPassword ? "text" : "password"}
-                className="form-control"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                style={{ borderRight: 0 }}
-              />
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                tabIndex={-1}
-                onClick={() => setShowPassword((v) => !v)}
-                style={{ borderLeft: 0, background: "#fff" }}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  // Eye-off SVG
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><path stroke="#f3268c" strokeWidth="2" d="M3 3l18 18M10.7 10.7a3 3 0 104.6 4.6M6.53 6.53C4.13 8.36 2.5 11 2.5 12c0 1 .97 2.7 2.97 4.3C8.47 18.1 11.23 19 12 19c.77 0 3.53-.9 6.53-2.7C21.03 14.7 22 13 22 12c0-.77-.9-3.53-2.7-6.53C17.3 4.97 16 4 15 4c-1 0-2.7.97-4.3 2.97"></path></svg>
-                ) : (
-                  // Eye SVG
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="#0d6efd" strokeWidth="2"/><path stroke="#0d6efd" strokeWidth="2" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/></svg>
-                )}
-              </button>
+    <PageTransition className="contact-page bg-light">
+      <div className="d-flex flex-column" style={{ minHeight: "100vh" }}>
+        <AnimatedHero
+          title="Login"
+          subtitle="Secure admin access to manage GOAN INSTITUTE's content and initiatives."
+          className="services-hero-modern"
+          overlayColor="rgba(102,126,234,0.1)"
+        />
+
+        <div className="flex-grow-1 d-flex align-items-center justify-content-center" style={{ padding: "2rem" }}>
+          <div className="card p-4 shadow" style={{ maxWidth: 400, width: "100%", borderRadius: 18, border: "none" }}>
+            <div className="text-center mb-4">
+              <img src="https://res.cloudinary.com/dcfpgz4x8/image/upload/v1762753746/cropped-Untitled-design-18_zgjahh.png" alt="Darvik Foundation" style={{ width: 64, height: 64, borderRadius: 12, marginBottom: 8 }} />
+              <h2 className="mb-1" style={{ color: "var(--secondary)", fontWeight: 700 }}>Admin Login</h2>
+              <div className="mb-2" style={{ color: "var(--secondary-light)", fontWeight: 500, fontSize: 18 }}>Goan Institute</div>
             </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-3">
+                <label className="form-label" style={{ color: "var(--secondary)", fontWeight: 600 }}>Email or Name</label>
+                <input
+                  type="text"
+                  className="form-control textarea-secondary"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  required
+                  placeholder="Enter email or your name"
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label" style={{ color: "var(--secondary)", fontWeight: 600 }}>Password</label>
+                <div className="input-group">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control textarea-secondary"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={{ borderRight: 0 }}
+                    placeholder="Enter password"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline textarea-secondary"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword(v => !v)}
+                    style={{ borderLeft: 0 }}
+                  >
+                    <i className={showPassword ? "bi bi-eye-slash" : "bi bi-eye"}></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-3 text-end">
+                <button
+                  type="button"
+                  className="btn btn-link p-0"
+                  style={{ fontSize: 14 }}
+                  onClick={handleForgotPassword}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
+              <button type="submit" className="btn-accent w-100">Login</button>
+            </form>
           </div>
-          <button type="submit" className="btn w-100" style={{ background: "linear-gradient(90deg, #cdf326ff 60%, #0d6efd 100%)", color: "#fff", fontWeight: 600, borderRadius: 8, border: "none" }}>
-            Login
-          </button>
-        </form>
+        </div>
+
+        {/* Toast container */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="position-fixed bottom-0 end-0 p-3"
+          style={{ zIndex: 9999 }}
+        >
+          {toast.message && (
+            <div className={`toast align-items-center text-white bg-${toast.type === 'error' ? 'danger' : 'success'} border-0 show`} role="alert">
+              <div className="d-flex">
+                <div className="toast-body">{toast.message}</div>
+                <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setToast({ message: '', type: '' })}></button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }
 

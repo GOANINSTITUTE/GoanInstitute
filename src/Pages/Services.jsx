@@ -1,186 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase-config";
-import { collection, getDocs, getDoc, doc } from "firebase/firestore"; // <-- ADDED getDoc, doc
-import "./CSS/Services.css";
+import { collection, getDocs, getDoc, doc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 import AnimatedHero from "../Components/AnimatedHero";
 import PageTransition from "../Components/PageTransition";
-import { useNavigate } from 'react-router-dom';
 
-// Modern Loader
+import { Link, useLocation } from "react-router-dom";
+// Loader Component
 const ModernLoader = () => (
-  <div className="modern-loader-container">
-    <div className="loader-wrapper">
-      <div className="modern-spinner"></div>
-      <div className="loader-dots">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-    </div>
-    <p className="loader-text">Loading Services...</p>
+  <div className="text-center py-5">
+    <div className="spinner-border text-primary" role="status"></div>
+    <p className="mt-3 text-secondary">Loading Services...</p>
   </div>
 );
 
-// Stats Counter
-const StatsCounter = ({ number, label }) => {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    // Reset count if number prop changes
-    setCount(0);
-  }, [number]);
-
-  useEffect(() => {
-    if (typeof number !== "number" || count >= number) return;
-
-    // Adaptive step size and interval
-    let diff = number - count;
-    let increment, timeout;
-    if (number < 50) {
-      increment = 1;
-      timeout = 25;
-    } else if (number < 300) {
-      increment = Math.ceil(diff / 8);
-      timeout = 18;
-    } else if (number < 2000) {
-      increment = Math.ceil(diff / 5);
-      timeout = 8;
-    } else {
-      increment = Math.ceil(diff / 3);
-      timeout = 2;
-    }
-
-    const timer = setTimeout(() => {
-      setCount(prev => {
-        let next = prev + increment;
-        return next > number ? number : next;
-      });
-    }, timeout);
-    return () => clearTimeout(timer);
-  }, [count, number]);
-
-  return (
-    <div className="stat-item">
-      <div className="stat-number">{count}+</div>
-      <div className="stat-label">{label}</div>
-    </div>
-  );
-};
-
-// Enhanced Service Card
-const ServiceCard = ({ service, index, isVisible }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  return (
-    <div
-      className={`service-card-modern ${isVisible ? 'fade-in' : ''}`}
-      style={{
-        "--delay": `${index * 0.1}s`,
-        "--color": service.color || '#4facfe'
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      data-index={index}
-    >
-      <div className="glass-background"></div>
-      <div className={`icon-container ${isHovered ? 'hovered' : ''}`}>
-        <div className="icon-background"></div>
-        <i className={`bi ${service.icon}`}></i>
-        <div className="icon-shine"></div>
-      </div>
-      <div className="card-content">
-        <h3 className="service-title">{service.title}</h3>
-        <p className="service-description">{service.description}</p>
-        <button className="learn-more-btn">
-          <span>Learn More</span>
-          <i className="bi bi-arrow-right"></i>
-        </button>
-      </div>
-      <div className="card-decoration">
-        <div className="decoration-circle"></div>
-        <div className="decoration-line"></div>
-      </div>
-      <div className={`hover-overlay ${isHovered ? 'active' : ''}`}></div>
-    </div>
-  );
-};
-
-// ---- MAIN COMPONENT ----
-
-const coreServices = [
-  {
-    icon: "bi-book",
-    title: "Free Tuition & Learning Space",
-    description: "A free tuition center for underprivileged students, with dedicated study areas and a small library. Special sessions on yoga and support for students with learning disabilities.",
-    color: "#667eea"
-  },
-  {
-    icon: "bi-tree",
-    title: "Eco Clubs & School Partnerships",
-    description: "Eco clubs in partnership with local schools to promote environmental awareness and responsibility among students through activities and campaigns.",
-    color: "#f093fb"
-  },
-  {
-    icon: "bi-flower2",
-    title: "Farming & Sustainable Agriculture",
-    description: "Awareness programs and training for youth on organic farming, seed preservation, and sustainable practices. Led by experts in agriculture and environment.",
-    color: "#4facfe"
-  },
-  {
-    icon: "bi-droplet-half",
-    title: "Pond Restoration & Water Conservation",
-    description: "Cleaning and restoring local ponds to support biodiversity and water conservation in the community.",
-    color: "#43e97b"
-  },
-  {
-    icon: "bi-tree-fill",
-    title: "Afforestation & Green Spaces",
-    description: "Tree planting in schools, community areas, and private lands. Creation of mini forests and green spaces for a healthier environment.",
-    color: "#fa709a"
-  },
-  {
-    icon: "bi-journal-richtext",
-    title: "Cultural Documentation",
-    description: "Documenting and archiving the stories and performances of local folk artists to preserve cultural heritage.",
-    color: "#ffecd2"
-  }
-];
-
 const Services = () => {
   const [services, setServices] = useState([]);
+  const [benefits, setBenefits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCards, setVisibleCards] = useState([]);
-  const navigate = useNavigate();
-
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // Fetch stats from Firestore
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchStats() {
-      setStatsLoading(true);
-      try {
-        const snap = await getDoc(doc(db, "stats", "about"));
-        if (isMounted) setStats(snap.exists() ? snap.data() : {});
-      } catch (err) {
-        console.error("Error fetching stats:", err);
-        if (isMounted) setStats({});
-      } finally {
-        if (isMounted) setStatsLoading(false);
-      }
-    }
-    fetchStats();
-    return () => { isMounted = false; };
-  }, []);
-
-  // Fetch community services from Firestore
+  // Fetch Services
   useEffect(() => {
     const fetchServices = async () => {
       try {
         setLoading(true);
         const snapshot = await getDocs(collection(db, "services"));
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setServices(data);
+        setServices(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       } catch (error) {
         console.error("Error fetching services:", error);
       } finally {
@@ -190,131 +39,583 @@ const Services = () => {
     fetchServices();
   }, []);
 
-  // Animate cards on scroll (intersection observer)
+  // Fetch Benefits
+  useEffect(() => {
+    const fetchBenefits = async () => {
+      try {
+        const snap = await getDocs(collection(db, "benefits"));
+        setBenefits(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        console.error("Error fetching benefits:", error);
+      }
+    };
+    fetchBenefits();
+  }, []);
+
+  // Fetch Stats (Optional Section)
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchStats() {
+      try {
+        const snap = await getDoc(doc(db, "stats", "about"));
+        if (mounted) setStats(snap.exists() ? snap.data() : {});
+      } catch {
+        if (mounted) setStats({});
+      } finally {
+        if (mounted) setStatsLoading(false);
+      }
+    }
+
+    fetchStats();
+    return () => (mounted = false);
+  }, []);
+
+  // Animation Fade-in for cards
   useEffect(() => {
     if (loading) return;
 
     const observer = new window.IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const index = parseInt(entry.target.dataset.index, 10);
+          const index = Number(entry.target.dataset.index);
           if (entry.isIntersecting && !visibleCards.includes(index)) {
             setVisibleCards((prev) => [...prev, index]);
           }
         });
       },
-      { threshold: 0.1 }
+      { threshold: 0.2 }
     );
-    const cards = document.querySelectorAll('.service-card-modern');
-    cards.forEach((card) => observer.observe(card));
+
+    document.querySelectorAll(".service-card").forEach((card) => observer.observe(card));
+    document.querySelectorAll(".benefit-card").forEach((card) => observer.observe(card));
+    document.querySelectorAll(".smart-card").forEach((card) => observer.observe(card));
 
     return () => observer.disconnect();
-    // eslint-disable-next-line
-  }, [loading]);
+  }, [loading, benefits, visibleCards]);
 
   return (
-    <PageTransition className="services-page-modern">
-      {/* Enhanced Hero Section with Parallax */}
+    <PageTransition className="services-page">
+      {/* Hero Section */}
       <div className="hero-parallax">
         <AnimatedHero
           title="Our Services"
-          subtitle="Darvik Foundation empowers communities through education, environmental action, sustainable agriculture, and cultural preservation. Explore our transformative initiatives below."
-          className="services-hero-modern"
+          subtitle="Empowering communities through education, environmental conservation, sustainable agriculture, and cultural preservation."
+          className="services-hero"
           overlayColor="rgba(102,126,234,0.1)"
         />
-        {/* Floating elements */}
-        <div className="floating-elements">
-          <div className="float-element element-1"></div>
-          <div className="float-element element-2"></div>
-          <div className="float-element element-3"></div>
+      </div>
+
+      {/* CONTENT START */}
+      <section className="py-5 bg-light">
+        <div className="container-fluid">
+
+          {/* Header */}
+          <div className="text-center mb-5">
+            <span className="badge bg-accent text-dark mb-2">Edu. Programmes & Services</span>
+            <h2 className="text-dark">
+              GICE’s <span className="text-dark">Regular Skill Development Programme</span>
+            </h2>
+            <p className="text-dark">
+              We are on a mission to prepare students for the future by improving their language skills, soft skills, and life skills.
+            </p>
+          </div>
+
+<div className="d-flex flex-column flex-md-row justify-content-center gap-3 mb-5">
+
+      {/* Button 1 */}
+      <Link
+        to="/services/regular-skill-development"
+        className="btn btn-primary px-5 py-4 fw-semibold"
+       
+      >
+        1. Regular Skill Development
+      </Link>
+
+      {/* Button 2 */}
+      <Link
+        to="/services/smart-scholar"
+        className="btn btn-primary px-5 py-4 fw-semibold"
+      >
+        2. Smart Scholar Mission
+      </Link>
+
+    </div>
+
+
+          {/* Image + At a Glance */}
+
+
+{/* Main Section */}
+<div className="container">
+  <div className="row gx-2 mb-5">
+
+    {/* Text */}
+    <div className="col-md-8 col-lg-7 text-center text-md-start">
+      <h4 className="fw-bold mb-3">
+        Skill Development Programme – At a Glance
+      </h4>
+
+      <p className="text-muted">
+        Our trained in-house faculty works full-time on campus, helping students
+        build strong language, soft, and life skills inside and outside the classroom.
+      </p>
+
+      <p className="text-muted">
+        The programme focuses on personality and behaviour development, blending
+        smoothly with the school syllabus.
+      </p>
+
+      <p className="text-muted mb-3">
+        Every year, the curriculum is updated to keep sessions fresh and engaging.
+      </p>
+<ul className="list-unstyled mt-3">
+  <li className="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
+    <i className="bi bi-check2-circle text-primary fs-5 me-3"></i>
+    Improve English & soft skills
+  </li>
+
+  <li className="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
+    <i className="bi bi-check2-circle text-primary fs-5 me-3"></i>
+    Activity-based scientific learning
+  </li>
+
+  <li className="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
+    <i className="bi bi-check2-circle text-primary fs-5 me-3"></i>
+    Updated yearly for freshness
+  </li>
+
+  <li className="d-flex align-items-center mb-3 p-2 bg-light rounded-3">
+    <i className="bi bi-check2-circle text-primary fs-5 me-3"></i>
+    Experienced & engaging faculty
+  </li>
+</ul>
+
+    </div>
+
+  </div>
+</div>
+
+
+{/* Objectives Section */}
+<section className="">
+  <div className="container">
+
+    <h2
+      className="fw-bold text-center mb-3"
+      style={{ fontSize: "28px", color: "#1a1a1a" }}
+    >
+      Objectives of the Programme
+    </h2>
+
+    <p
+      className="text-center mb-5"
+      style={{ maxWidth: "750px", margin: "auto", color: "#555" }}
+    >
+      These objectives help students grow with confidence while improving their
+      communication, personality, and readiness for the future.
+    </p>
+
+    <div className="row g-4 justify-content-center">
+      {[
+        "Improve English proficiency, soft skills, and life skills.",
+        "Learn and develop these skills along with regular academics.",
+        "Enhance Listening, Speaking, Reading, Writing (LSRW).",
+        "Reduce mother tongue influence and improve accent clarity.",
+        "Lower inhibitions and build confidence in group & individual tasks.",
+        "Promote lifelong learning — training ends, but learning continues.",
+      ].map((item, index) => (
+        <div
+          key={index}
+          className="col-12 col-sm-6 col-lg-4 objective-card"
+          data-index={index}
+        >
+          <div
+            className="p-4 rounded shadow-sm h-100"
+            style={{
+              background: "var(--bg-back)",
+              border: "1px solid #e6e9ee",
+              transition: "0.3s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-6px)";
+              e.currentTarget.style.boxShadow = "0px 12px 22px rgba(0,0,0,0.12)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0px 6px 12px rgba(0,0,0,0.06)";
+            }}
+          >
+            <div className="d-flex align-items-start">
+              <div
+                className="me-3 d-flex align-items-center justify-content-center fw-bold text-primary"
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: "rgba(102, 126, 234, 0.12)",
+                  fontSize: "18px",
+                }}
+              >
+                {index + 1}
+              </div>
+
+              <p className="fw-semibold mb-0" style={{ color: "#333", fontSize: "15px" }}>
+                {item}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section
+  style={{
+    padding: "70px 20px",
+    background: "bg-back",
+  }}
+>
+  <div className="container">
+    {/* Heading */}
+    <h2
+      className="fw-bold text-center mb-3"
+      style={{ fontSize: "28px", letterSpacing: "0.6px", color: "#1a1a1a" }}
+    >
+      Why Soft Skills & Life Skills Matter
+    </h2>
+
+    <p
+      className="text-center mb-5"
+      style={{
+        maxWidth: "750px",
+        margin: "auto",
+        fontSize: "16px",
+        color: "#444",
+        lineHeight: "1.7",
+      }}
+    >
+      Soft skills are not just extra skills — they are essential for success in education, career, and personal life.
+    </p>
+
+    {/* Cards */}
+    <div className="row g-4 justify-content-center">
+      {[
+        {
+          icon: "bi-graph-up-arrow",
+          stat: "85%",
+          text: "of job success comes from soft skills (Stanford & Harvard)",
+        },
+        {
+          icon: "bi-hand-thumbs-up-fill",
+          stat: "67%",
+          text: "of companies prefer strong communicators (Skill Survey)",
+        },
+        {
+          icon: "bi-lightbulb-fill",
+          stat: "30–40%",
+          text: "of future jobs rely on social-emotional skills (Microsoft)",
+        },
+      ].map((item, index) => (
+        <div key={index} className="col-12 col-md-6 col-lg-4 b">
+          <div
+            className="text-center p-4 h-100 rounded shadow-sm "
+            style={{
+              background: "var(--bg-back)",
+              border: "1px solid #e6e9ee",
+              transition: "0.3s",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-6px)";
+              e.currentTarget.style.boxShadow = "0px 12px 22px rgba(0,0,0,0.12)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0px 6px 12px rgba(0,0,0,0.06)";
+            }}
+          >
+            {/* Icon */}
+            <i
+              className={`bi ${item.icon}`}
+              style={{
+                fontSize: "38px",
+                color: "var(--primary)",
+                marginBottom: "12px",
+              }}
+            ></i>
+
+            {/* Stat */}
+            <h3
+              className="fw-bold"
+              style={{ fontSize: "32px", color: "var(--primary)" }}
+            >
+              {item.stat}
+            </h3>
+
+            {/* Text */}
+            <p
+              style={{
+                marginTop: "10px",
+                fontSize: "15px",
+                color: "#333",
+                lineHeight: "1.6",
+              }}
+            >
+              {item.text}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+{/* Our Distinction Section */}
+<section className="py-5" >
+  <div className="container">
+
+    <h2
+      className="fw-bold text-center mb-3"
+      style={{ fontSize: "28px", color: "#1a1a1a" }}
+    >
+      Our Distinction
+    </h2>
+
+    <p
+      className="text-center mb-5"
+      style={{ maxWidth: "750px", margin: "auto", color: "#555" }}
+    >
+      What makes our programme unique and impactful for students and institutions.
+    </p>
+
+    <div className="row g-4 justify-content-center">
+      {[
+        "Well-Structured Curriculum — research-backed & ever-evolving.",
+        "Strong Training Methodology — helps students set goals & grow.",
+        "Personal Touch — every student is valued equally.",
+        "Continuous Evaluation — multiple tools to measure progress.",
+        "Activity-Based Learning — high engagement, better results.",
+        "Real-World Contextual Learning — preparing students for life.",
+      ].map((text, index) => (
+        <div key={index} className="col-12 col-sm-6 col-lg-4">
+          <div
+            className="p-4 rounded shadow-sm h-100 text-center"
+            style={{
+              background: "var(--bg-light)",
+              border: "1px solid #e6e9ee",
+              transition: "0.3s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-6px)";
+              e.currentTarget.style.boxShadow =
+                "0px 12px 22px rgba(0,0,0,0.12)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow =
+                "0px 6px 12px rgba(0,0,0,0.06)";
+            }}
+          >
+            {/* Circular Number Icon */}
+            <div
+              className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                backgroundColor: "var(--secondary)",
+                color: "white",
+                fontWeight: "bold",
+                fontSize: "1.2rem",
+              }}
+            >
+              {index + 1}
+            </div>
+
+            {/* Text */}
+            <p
+              className="fw-semibold mb-0"
+              style={{ color: "#333", lineHeight: "1.6", fontSize: "15px" }}
+            >
+              {text}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+{/* Benefits for Students */}
+<section className="py-5" >
+  <div className="container">
+
+    <h2 className="fw-bold text-center mb-3" style={{ fontSize: "28px", color: "#1a1a1a" }}>
+      Benefits for the Students
+    </h2>
+
+    <p className="text-center mb-5" style={{ maxWidth: "750px", margin: "auto", color: "#555" }}>
+      These benefits help students grow academically, mentally, and socially while building confidence for their future.
+    </p>
+
+    <div className="row g-4 justify-content-center">
+      {[
+        "Enhanced motivation & participation",
+        "Improved academic performance",
+        "Increased student engagement",
+        "Teacher confidence & effectiveness",
+        "Stronger school community & reputation",
+        "Monthly competitions, prizes & certificates",
+        "Course completion certificates",
+      ].map((item, index) => (
+        <div
+          key={index}
+          className="col-12 col-sm-6 col-lg-4 benefit-card "
+          data-index={index}
+        >
+          <div
+            className="p-4 text-center rounded shadow-sm h-100"
+            style={{
+              background: "var(--bg-light)",
+              border: "1px solid #e6e9ee",
+              transition: "0.3s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-6px)";
+              e.currentTarget.style.boxShadow = "0px 12px 22px rgba(0,0,0,0.12)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0px 6px 12px rgba(0,0,0,0.06)";
+            }}
+          >
+            <div
+              className="mx-auto mb-3 d-flex align-items-center justify-content-center"
+              style={{
+                width: "55px",
+                height: "55px",
+                background: "rgba(102, 126, 234, 0.12)",
+                borderRadius: "50%",
+              }}
+            >
+              <i className="bi-check-lg  text-primary"></i>
+            </div>
+
+            <p className="fw-semibold mb-0" style={{ color: "#333", fontSize: "15px" }}>
+              {item}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+
+          
+
+          
+          {/* What We Do */}
+<section 
+  style={{
+    borderRadius: "10px",
+  }}
+  className="wow-section "
+>
+  <div className="container">
+
+    <h2 className="mt-5 mb-4"
+      style={{
+        fontWeight: "bold",
+        fontSize: "26px",
+        textAlign: "center",
+        marginBottom: "10px",
+      }}
+    >
+      What Do We Do in Schools?
+    </h2>
+
+    <p style={{ textAlign: "center", marginBottom: "40px" }}>
+      The programme runs from June to March and includes:
+    </p>
+
+    <div className="row g-4">
+
+      <div className="col-md-4">
+        <div className="service-box text-center p-4 shadow-sm"
+          style={{
+            background: "var(--bg-light)",
+            borderRadius: "12px",
+            transition: "0.4s",
+          }}
+        >
+          <i className="bi bi-easel fs-1 text-primary"></i>
+          <h5 className="mt-3 fw-bold">Classroom Training</h5>
+          <p style={{ fontSize: "14px" }}>
+            Activity-based lessons using GICE’s structured curriculum.
+          </p>
         </div>
       </div>
 
-      {/* Stats Section */}
-      <section className="stats-section">
-        <div className="container">
-          <div className="stats-grid">
-            {statsLoading ? (
-              <div className="text-muted py-5">Loading stats...</div>
-            ) : (
-              <>
-                <StatsCounter number={stats?.studentsHelped || 0} label="Students Helped" />
-                <StatsCounter number={stats?.treesPlanted || 0} label="Trees Planted" />
-                <StatsCounter number={stats?.pondsRestored || 0} label="Ponds Restored" />
-                <StatsCounter number={stats?.communitiesServed || 0} label="Communities Served" />
-              </>
-            )}
-          </div>
+      <div className="col-md-4">
+        <div className="service-box text-center p-4 shadow-sm"
+          style={{
+            background: "var(--bg-light)",
+            borderRadius: "12px",
+            transition: "0.4s",
+          }}
+        >
+          <i className="bi bi-people-fill fs-1 text-primary"></i>
+          <h5 className="mt-3 fw-bold">Campus Activities</h5>
+          <p style={{ fontSize: "14px" }}>
+            Fun linguistic games, public speaking & confidence-boosting tasks.
+          </p>
         </div>
-      </section>
+      </div>
 
-      {/* Main Services Section */}
-      <section className="services-section-modern">
-        {loading ? (
-          <ModernLoader />
-        ) : (
-          <div className="container">
-            {/* Section Header */}
-            <div className="section-header">
-              <span className="section-badge">What We Do</span>
-              <h2 className="section-title">
-                Transforming Communities Through
-                <span className="gradient-text"> Meaningful Impact</span>
-              </h2>
-              <p className="section-subtitle">
-                Our comprehensive services are designed to create lasting positive change 
-                in communities through education, environmental conservation, and cultural preservation.
-              </p>
-            </div>
-            {/* Services Grid */}
-            <div className="services-grid-modern">
-              {coreServices.map((service, index) => (
-                <ServiceCard
-                  key={service.title}
-                  service={service}
-                  index={index}
-                  isVisible={visibleCards.includes(index)}
-                />
-              ))}
-            </div>
-            {/* Additional Services from Firestore */}
-            {services.length > 0 && (
-              <div className="additional-services">
-                <h3 className="additional-title">Community Initiatives</h3>
-                <div className="additional-grid">
-                  {services.map((service, index) => (
-                    <div key={service.id || index} className="additional-card">
-                      <div className="additional-content">
-                        <h4>{service.title}</h4>
-                        <p>{service.description}</p>
-                        {service.imageUrl && (
-                          <img
-                            src={service.imageUrl}
-                            alt={service.title}
-                            className="additional-image"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+      <div className="col-md-4">
+        <div className="service-box text-center p-4 shadow-sm"
+          style={{
+            background: "var(--bg-light)",
+            borderRadius: "12px",
+            transition: "0.4s",
+          }}
+        >
+          <i className="bi bi-bar-chart-line fs-1 text-primary"></i>
+          <h5 className="mt-3 fw-bold">Assessment</h5>
+          <p style={{ fontSize: "14px" }}>
+            Continuous evaluations shared with schools and parents.
+          </p>
+        </div>
+      </div>
 
-      {/* Call to Action Section */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Ready to Make a Difference?</h2>
-            <p>Join us in our mission to create positive change in communities</p>
-            <button className="cta-button" onClick={() => navigate('/donate')}>
-              <span>Get Involved</span>
-              <i className="bi bi-heart-fill"></i>
-            </button>
-          </div>
+    </div>
+  </div>
+
+  
+</section>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+          
+
         </div>
       </section>
     </PageTransition>

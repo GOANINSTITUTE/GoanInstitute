@@ -1,6 +1,6 @@
 .donation-section {
   min-height: 100vh;
-  background: linear-gradient(120deg, #eaf2fb 60%, #f6fafd 100%);
+  background: linear-gradient(120deg, var(--background));
   padding-top: 80px;
   position: relative;
   overflow-x: hidden;
@@ -13,11 +13,7 @@
 /* Card Styles */
 .rounded-2xl,
 .shadow-xl,
-.bg-white {
-  border-radius: 1.5rem !important;
-  box-shadow: 0 10px 30px rgba(13, 110, 253, 0.13) !important;
-  background: #fff !important;
-}
+
 
 /* Info Card */
 .donation-section .donation-logo {
@@ -29,7 +25,7 @@
 .donation-section h2,
 .donation-section h3,
 .donation-section h4 {
-  color: #0d6efd;
+  color: var(--secondary);
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
@@ -38,7 +34,7 @@
 .donation-section .form-label,
 .donation-section label {
   font-weight: 600;
-  color: #0d6efd;
+  color:var(--secondary);
   font-size: 1rem;
 }
 
@@ -46,7 +42,7 @@
 .donation-section .form-control,
 .donation-section textarea {
   border-radius: 0.75rem;
-  border: 2px solid #eaf2fb;
+  border: 2px solid var(--secondary-light);
   font-size: 1rem;
   padding: 0.75rem 1rem;
   transition: border-color 0.2s;
@@ -54,31 +50,31 @@
 
 .donation-section .form-control:focus,
 .donation-section textarea:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 2px #e0f2fe;
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 2px var(--background);
 }
 
 /* Button */
 .donation-section .btn-primary,
 .donation-section button[type="submit"] {
-  background: linear-gradient(90deg, #0d6efd 60%, #3a86ff 100%);
+  background: linear-gradient(90deg, var(--secondary) 60%, var(--secondary-light) 100%);
   border: none;
   font-weight: 700;
   font-size: 1.1rem;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px #0d6efd22;
+  box-shadow: 0 4px 24px var(--secondary);
   transition: background 0.2s, box-shadow 0.2s;
 }
 
 .donation-section .btn-primary:hover,
 .donation-section button[type="submit"]:hover {
-  background: linear-gradient(90deg, #0b5ed7 60%, #2563eb 100%);
-  box-shadow: 0 8px 32px #0d6efd33;
+  background: linear-gradient(90deg, var(--secondary) 60%, var(--secondary-light) 100%);
+  box-shadow: 0 8px 32px var(--secondary);
 }
 
 /* Checkbox Label */
 .donation-section .form-check-label {
-  color: #222;
+  color: var(--text-dark);
   font-size: 1rem;
 }
 
@@ -94,6 +90,32 @@
 .donation-section .px-4.py-2.rounded-lg {
   font-size: 1rem;
   min-width: 70px;
+}
+.custom-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease;
+}
+
+.custom-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.custom-toast.success {
+  background-color: #4caf50;
+}
+
+.custom-toast.error {
+  background-color: #f44336;
 }
 
 /* Responsive */

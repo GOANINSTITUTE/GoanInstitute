@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState } from "react";
-import "./CustomEditor.css";
+import "./CSS/CustomEditor.css";
 
 const FONT_SIZES = [
   { label: "Small", value: "2" },
-  { label: "Normal", value: "3" }, 
+  { label: "Normal", value: "3" },
   { label: "Large", value: "5" },
   { label: "Huge", value: "7" },
 ];
@@ -35,9 +35,13 @@ const CustomEditor = ({ value, setValue }) => {
   };
 
   const execCommand = (command, value = null) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      setValue(editorRef.current.innerHTML);
+    try {
+      document.execCommand(command, false, value);
+      if (editorRef.current) {
+        setValue(editorRef.current.innerHTML);
+      }
+    } catch (err) {
+      console.error("Editor command failed:", err);
     }
   };
 
@@ -57,11 +61,11 @@ const CustomEditor = ({ value, setValue }) => {
     execCommand("justify" + direction);
   };
 
-  // Prevent buttons from stealing focus and losing selection
+  // Prevent buttons from stealing focus
   const preventFocusLoss = (e) => e.preventDefault();
 
   return (
-    <div className="editor-container">
+    <div className="editor-container ">
       <label className="form-label">Detailed Paragraph</label>
 
       <div className="toolbar">
@@ -153,13 +157,13 @@ const CustomEditor = ({ value, setValue }) => {
       </div>
 
       <div
-        className="custom-editor"
+        className="custom-editor textarea-secondary "
         contentEditable
         dir="ltr"
         ref={editorRef}
         onInput={handleInput}
         suppressContentEditableWarning={true}
-        placeholder="Write detailed info here..."
+        data-placeholder="Write detailed info here..."
       />
     </div>
   );

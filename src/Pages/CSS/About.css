@@ -1,96 +1,159 @@
-/* About Page Styles */
-
-.about-page {
-  background: #f8f9fa;
-}
-
-
-
-/* Organization Profile */
-.about-profile-logo {
-  max-width: 320px;
-  background: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px #0d6efd22;
-}
-
-/* Core Values */
-.icon-circle {
-  font-size: 36px;
-  color: #0d6efd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #e3f2fd;
-  margin-bottom: 8px;
-}
-
-/* Team Section */
-.about-team-img {
-  width: 90px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 50%;
-  border: 3px solid #0d6efd;
-  margin-bottom: 12px;
-}
-
-/* Call to Action */
-.about-cta {
-  background: linear-gradient(90deg, #d3df66 60%, #0d6efd 100%);
-  color: #fff;
-  position: relative;
-}
-.about-cta .container {
-  position: relative;
-  z-index: 2;
-}
-.about-cta-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
+/* ================= TEAM SECTION ================= */
+.team-card {
+  max-width: 280px;
   width: 100%;
-  height: 100%;
-  opacity: 0.07;
-  background-image: url('../../Images/logodarvik.png') center/contain no-repeat;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Section Headings */
-.about-section-title {
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin: auto;
+  padding: 1.5rem;
+  border-radius: 18px;
+  background: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
 }
 
-/* Misc */
-.bg-pink {
-  background: linear-gradient(90deg, #d3df66 60%, #0d6efd 100%) !important;
-  color: #fff !important;
-}
-.text-primary {
-  color: #0d6efd !important;
-}
-.text-success {
-  color: #198754 !important;
+/* Hover effect */
+.team-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
 }
 
-/* Responsive tweaks */
-@media (max-width: 767px) {
-  .about-hero {
-    min-height: 220px;
-    padding: 2rem 0;
+/* ================= PROFILE IMAGES ================= */
+.team-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid var(--primary);
+  transition: all 0.3s ease;
+}
+
+.team-card-hover:hover .team-img {
+  border-color: var(--secondary);
+  transform: scale(1.05);
+}
+
+/* ================= LEADERSHIP HIGHLIGHT ================= */
+.row:first-of-type .team-card {
+  max-width: 320px;
+  padding: 2rem;
+  border: 4px solid var(--primary);
+  background: linear-gradient(180deg, var(--text-muted), var(--text-muted));
+}
+
+.row:nth-of-type(2) .team-card {
+  min-height: 260px;
+  padding: 1.2rem;
+  border: 4px solid var(--secondary-light);
+  background: linear-gradient(180deg, var(--text-muted), var(--text-muted));
+}
+
+.row:nth-of-type(n+3) .team-card {
+  max-width: 300px;
+  padding: 1.5rem;
+  border: 4px solid var(--primary-light);
+  background: linear-gradient(180deg, var(--text-muted), var(--text-muted));
+}
+
+/* ================= TEXT STYLING ================= */
+.team-card h6 {
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 0.3rem;
+  color: var(--accent);
+  background-color: var(--primary);
+  border-radius: 12px;
+  padding: 4px 10px;
+  display: inline-block;
+}
+
+/* Row-specific styles */
+.row:first-of-type .team-card h6 {
+  background-color: var(--primary);
+}
+.row:nth-of-type(2) .team-card h6 {
+  background-color: var(--secondary-light);
+}
+.row:nth-of-type(3) .team-card h6 {
+  background-color: var(--primary-light);
+}
+.row:nth-of-type(n+4) .team-card h6 {
+  background-color: var(--accent);
+}
+
+.team-card .text-primary {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.team-card p {
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.4;
+  margin-top: 0.5rem;
+}
+
+/* Row spacing */
+.row.g-4 {
+  row-gap: 2rem; /* maintain clean gaps */
+}
+
+/* ================= SOCIAL ICONS ================= */
+.team-card .d-flex a i {
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+.team-card .d-flex a:hover i {
+  transform: scale(1.2);
+  opacity: 0.85;
+}
+
+/* ================= RESPONSIVE STYLES ================= */
+
+/* Tablet (768px and below) */
+@media (max-width: 992px) {
+  .team-img {
+    width: 100px;
+    height: 100px;
   }
-  .about-profile-logo {
-    max-width: 220px;
+  .team-card {
+    max-width: 240px;
+    padding: 1.2rem;
   }
-  .about-team-img {
-    width: 70px;
-    height: 70px;
+  .team-card h6 {
+    font-size: 0.95rem;
+    padding: 3px 8px;
+  }
+  .team-card p {
+    font-size: 0.8rem;
   }
 }
 
+/* Mobile (576px and below) */
+@media (max-width: 576px) {
+  .team-img {
+    width: 80px;
+    height: 80px;
+  }
+  .team-card {
+    max-width: 90%; /* takes full width nicely */
+    padding: 1rem;
+  }
+  .team-card h6 {
+    font-size: 0.9rem;
+  }
+  .team-card .text-primary {
+    font-size: 0.8rem;
+  }
+  .team-card p {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  /* Reduce gap for mobile so it fits neatly */
+  .row.g-4 {
+    row-gap: 1.5rem;
+  }
+}

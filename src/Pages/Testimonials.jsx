@@ -8,182 +8,262 @@ import { db } from "../firebase-config";
 import { collection, getDocs } from "firebase/firestore";
 import AnimatedHero from "../Components/AnimatedHero";
 import PageTransition from "../Components/PageTransition";
-import ShareYourStory from "./ShareYourStory";
-
+import { motion } from "framer-motion";
 
 const Loader = () => (
-  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200 }}>
-    <div
-      style={{
-        width: 48,
-        height: 48,
-        border: "5px solid #eee",
-        borderTop: "5px solid #0d6efd",
-        borderRadius: "50%",
-        animation: "spin 1s linear infinite",
-      }}
-    />
-    <style>
-      {`
-          @keyframes spin {
-            0% { transform: rotate(0);}
-            100% { transform: rotate(360deg);}
-          }
-        `}
-    </style>
+  <div className="loader-wrap">
+    <div className="loader" />
   </div>
 );
 
 const getAvatar = (name, imageUrl) => {
   if (imageUrl) return imageUrl;
-  // Return generated avatar URL if no image
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=128&background=dee2e6&color=495057&rounded=true`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    name
+  )}&size=128&background=${encodeURIComponent(
+    getComputedStyle(document.documentElement).getPropertyValue("--background").trim() ||
+      "e2dbc9"
+  )}&color=${encodeURIComponent(
+    getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() ||
+      "302728"
+  )}&rounded=true`;
 };
 
 const Testimonials = () => {
   const [testimonials, setTestimonials] = useState([]);
+  const [principalTestimonials, setPrincipalTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [expandedIds, setExpandedIds] = useState(new Set());
+
+  const toggleExpand = (id) => {
+    setExpandedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     const fetchTestimonials = async () => {
       try {
         setLoading(true);
-        const querySnapshot = await getDocs(collection(db, "testimonials"));
-        const data = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setTestimonials(data);
+
+        // Student & faculty testimonials
+        const snap1 = await getDocs(collection(db, "testimonials"));
+        const data1 = snap1.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setTestimonials(data1);
+
+        // Principal / Client Institution Testimonials
+        const snap2 = await getDocs(collection(db, "clientTestimonials"));
+        const data2 = snap2.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        setPrincipalTestimonials(data2);
+
       } catch (error) {
         console.error("Error fetching testimonials:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchTestimonials();
   }, []);
 
-  // Filter approved testimonials only
   const approvedTestimonials = testimonials.filter((t) => !t.pending);
+  const students = approvedTestimonials.filter((t) => t.type === "student");
+  const faculty = approvedTestimonials.filter((t) => t.type === "faculty");
 
-  // If no approved testimonials and not loading, show only ShareYourStory
-  if (!loading && approvedTestimonials.length === 0) {
-    return (
-      <PageTransition className="testimonials-page bg-light">
-        <AnimatedHero
-          title="Testimonials"
-          subtitle="Hear from the communities and individuals who have been touched by Darvik Foundation."
-          className="testimonial-hero"
-          overlayColor="rgba(220,53,69,0.15)"
-        />
-        <section className="container py-5" style={{ maxWidth: 1100 }}>
-          <ShareYourStory />
-        </section>
-      </PageTransition>
-    );
-  }
+  const renderTestimonials = (title, list, type) => (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      viewport={{ once: true }}
+    >
+      <h2 className="section-title">{title}</h2>
+      <p className="section-subtitle">
+        {type === "student"
+          ? "Here's what our students have to say."
+          : "Hear from our dedicated faculty members."}
+      </p>
 
-  return (
-    <PageTransition className="testimonials-page bg-light">
-      <AnimatedHero
-        title="Testimonials"
-        subtitle="Hear from the communities and individuals who have been touched by Darvik Foundation."
-        className="testimonial-hero"
-        overlayColor="rgba(220,53,69,0.15)"
-      />
-      <section className="container py-5" style={{ maxWidth: 1100 }}>
-        <div data-aos="fade-up" data-aos-delay={80}>
-          <h2 style={{ fontWeight: 900, letterSpacing: 1 }} className="mb-3 mt-2 text-center">
-            What Our Community Says
-          </h2>
-          <div className="mb-4 text-center text-muted" style={{ fontSize: "1.1rem" }}>
-            These stories fuel our mission every day.
-          </div>
-
-          {loading ? (
-            <Loader />
-          ) : (
-            <Swiper
-              modules={[Pagination, Autoplay]}
-              loop={true}
-              speed={700}
-              autoplay={{ delay: 5000 }}
-              slidesPerView={1}
-              pagination={{ clickable: true }}
-              style={{ paddingBottom: 48 }}
-              breakpoints={{
-                768: { slidesPerView: 2, spaceBetween: 32 },
-                1200: { slidesPerView: 3, spaceBetween: 40 },
-              }}
-            >
-              {approvedTestimonials.map((item) => (
-                <SwiperSlide key={item.id}>
-                  <div
-                    className="testimonial-item shadow-sm"
-                    style={{
-                      background: "#fff",
-                      borderRadius: 18,
-                      boxShadow: "0 4px 24px rgba(20,30,48,0.10)",
-                      padding: "2.2rem 1.5rem 2rem 1.5rem",
-                      margin: "1.5rem 0",
-                      minHeight: 420,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "relative",
-                      transition: "box-shadow 0.3s",
+      {list.length === 0 ? (
+        <p className="text-center text-muted mb-5">
+          ....
+        </p>
+      ) : (
+        <Swiper
+          modules={[Pagination, Autoplay]}
+          loop={list.length > 1}
+          speed={700}
+          autoplay={{ delay: 5000, disableOnInteraction: false }}
+          slidesPerView={1}
+          spaceBetween={20}
+          pagination={{ clickable: true, dynamicBullets: true }}
+          style={{ paddingBottom: 48 }}
+          breakpoints={{
+            768: { slidesPerView: 2, spaceBetween: 32 },
+            1200: { slidesPerView: 3, spaceBetween: 40 },
+          }}
+        >
+          {list.map((item, i) => {
+            const isExpanded = expandedIds.has(item.id);
+            return (
+              <SwiperSlide key={item.id || i}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.45, delay: i * 0.06 }}
+                  viewport={{ once: true }}
+                  className="testimonial-card"
+                >
+                  <img
+                    src={getAvatar(item.name || "Member", item.imageUrl)}
+                    alt={item.name || "Member"}
+                    className="testimonial-avatar"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        item.name || "Member"
+                      )}&size=128&background=e2dbc9&color=302728&rounded=true`;
                     }}
-                  >
-                    <img
-                      src={getAvatar(item.name, item.imageUrl)}
-                      alt={item.name}
-                      className="testimonial-img mb-3"
-                      style={{
-                        width: 90,
-                        height: 90,
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "3px solid #0d6efd",
-                        boxShadow: "0 2px 8px #0d6efd22",
-                        background: "#f8f9fa",
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = getAvatar(item.name, "");
+                  />
+
+                  <div className="testimonial-body">
+                    <h3 className="testimonial-name">{item.name}</h3>
+                    <h4 className="testimonial-role">{item.title}</h4>
+
+                    <div
+                      id={`testimonial-text-${item.id || i}`}
+                      className={`testimonial-text ${
+                        isExpanded ? "expanded" : ""
+                      }`}
+                      dangerouslySetInnerHTML={{
+                        __html: item.text || "<i>No message provided.</i>",
                       }}
                     />
-                    <h3 style={{ fontWeight: 700, fontSize: "1.25rem", marginBottom: 2 }}>{item.name}</h3>
-                    <h4 style={{ color: "#0d6efd", fontSize: "1.05rem", marginBottom: 8 }}>{item.title}</h4>
-                    <div className="stars mb-2" aria-label={`Rating: ${item.stars} stars`}>
-                      {Array.from({ length: item.stars }).map((_, idx) => (
-                        <i key={idx} className="bi bi-star-fill text-warning" style={{ fontSize: 18 }}></i>
-                      ))}
-                    </div>
-                    <blockquote
-                      style={{
-                        fontSize: "1.15rem",
-                        color: "#333",
-                        fontStyle: "italic",
-                        margin: 0,
-                        marginTop: 12,
-                        lineHeight: 1.7,
-                        textAlign: "center",
-                        position: "relative",
-                      }}
-                    >
-                      <i className="bi bi-quote quote-icon-left" style={{ color: "#0d6efd", fontSize: 22, verticalAlign: "middle", marginRight: 6 }}></i>
-                      {item.text}
-                      <i className="bi bi-quote quote-icon-right" style={{ color: "#0d6efd", fontSize: 22, verticalAlign: "middle", marginLeft: 6 }}></i>
-                    </blockquote>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          )}
 
-          {/* Show ShareYourStory form always below carousel */}
-          <div className="mt-5">
-            <ShareYourStory />
+                    {item.text && item.text.length > 140 && (
+                      <button
+                        className="readmore-btn"
+                        onClick={() => toggleExpand(item.id)}
+                        aria-expanded={isExpanded}
+                        aria-controls={`testimonial-text-${item.id || i}`}
+                      >
+                        {isExpanded ? "Show Less" : "Read More"}
+                      </button>
+                    )}
+
+                    <div className="testimonial-stars" aria-hidden>
+                      {Array.from({ length: item.stars || 5 }).map(
+                        (_, idx) => (
+                          <i key={idx} className="bi bi-star-fill" />
+                        )
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              </SwiperSlide>
+            );
+          })}
+        </Swiper>
+      )}
+    </motion.div>
+  );
+
+  return (
+    <PageTransition
+      className="testimonials-page"
+      style={{
+        background:
+          "linear-gradient(135deg, var(--background) 0%, var(--bg-light) 100%)",
+      }}
+    >
+      <AnimatedHero
+        title="Our Testimonials"
+        subtitle="The pursuit of excellence can lead to the accomplishment of wonders."
+        className="testimonial-hero"
+        overlayColor="rgba(220,53,69,0.08)"
+      />
+
+      <section className="container intro-section" style={{ maxWidth: 1150 }}>
+        <motion.h2
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          className="intro-title"
+        >
+          OUR CLIENTS’ TESTIMONIALS
+        </motion.h2>
+
+        <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} className="intro-text"> “Where Learning Thrives and Futures Rise!” Commendation from Our Patrons </motion.p>  
+
+        <p className="mt-3"> The commendations our institution receives are a testament to a journey defined by dedication, hard work, and a deep commitment to educational excellence. Each heartfelt endorsement reflects the trust and impact we’ve cultivated over the past 17 years, highlighting the lives we’ve touched and the dreams we’ve helped others achieve. It hasn’t been an easy road; we’ve faced countless obstacles, made difficult choices, and tirelessly refined our vision and services. Yet, the satisfaction of knowing we’ve made a meaningful difference makes every step worthwhile. Our clients’ warm words of appreciation inspire us to strive for improvement every day. </p>
+      </section>
+
+      {/* Video Section */}
+      <section className="py-5 honourable-section">
+        <div className="container">
+          <div className="row align-items-center gy-4">
+            <div className="col-md-6">
+              <div className="video-wrap">
+                <iframe
+                  title="YouTube Video"
+                  src="https://www.youtube.com/embed/TVKLVOHXtys?si=Y585_I_Rx1Td6F3d"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+
+            <div className="col-md-6 text-center text-md-start">
+              <h3 className="honourable-title">Words from</h3>
+              <div className="honourable-content">
+                <div className="honourable-large">HONOURABLE</div>
+                <div className="honourable-sub">School Principal</div>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
+
+      {/* Client Testimonials */}
+      <section className="py-5 clients-section">
+        <div className="container" style={{ maxWidth: 1150 }}>
+          <h2 className="section-title mb-3">Client Institutions Speak</h2>
+          <p className="section-subtitle">
+            Hear What Our Client Institutions Have To Say
+          </p>
+
+          <div className="clients-grid">
+            {principalTestimonials.length === 0 ? (
+              <p className="text-center text-muted">
+                No client testimonials available.
+              </p>
+            ) : (
+              principalTestimonials.map((t, idx) => (
+                <motion.article
+                  key={t.id}
+                  className="client-card bg-transparent"
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.45, delay: idx * 0.02 }}
+                  viewport={{ once: true }}
+                >
+                  <h1 className="client-heading">{t.heading}</h1>
+                  <p className="client-text">{t.text}</p>
+                  <div className="client-meta">
+                    <div className="client-author">{t.author}</div>
+                    <div className="client-school">{t.school}</div>
+                  </div>
+                </motion.article>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="container py-5">
+        
       </section>
     </PageTransition>
   );

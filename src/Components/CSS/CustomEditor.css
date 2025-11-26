@@ -46,9 +46,9 @@
 
 .toolbar button:hover, 
 .toolbar button:focus {
-  background: #0d6efd;
-  color: white;
-  border-color: #0d6efd;
+  background: var(--secondary);
+  color:var(--text-eggshell);
+  border-color: var(--secondary);
 }
 
 /* Prevent text selection on icons */
@@ -81,11 +81,11 @@
 
 .toolbar button.align-btn:hover svg,
 .toolbar button.align-btn:focus svg {
-  fill: #0d6efd;
+  fill: var(--secondary);
 }
 
 .toolbar button.align-btn:focus {
-  outline: 2px solid #0d6efd;
+  outline: 2px solid var(--secondary);
   outline-offset: 2px;
 }
 
@@ -93,7 +93,7 @@
 .toolbar label {
   font-weight: 600;
   font-size: 0.93rem;
-  color: #0d6efd;
+  color:var(--secondary);
   user-select: none;
   margin-right: 4px;
   white-space: nowrap;
@@ -113,7 +113,7 @@
 }
 
 .toolbar select:focus {
-  border-color: #0d6efd;
+  border-color: var(--secondary);
   box-shadow: 0 0 0 2px rgba(13,110,253,0.15);
   outline: none;
 }
@@ -139,11 +139,11 @@
 /* Editable content area */
 .custom-editor {
   min-height: 180px;
-  border: 1.5px solid #dee2e6;
+  border: 2px solid var(--secondary);
   border-radius: 7px;
   box-sizing: border-box;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--background);
   font-size: 1.07rem;
   line-height: 1.7;
   color: #1a1a1a;
@@ -167,7 +167,7 @@
 }
 
 .custom-editor:focus {
-  border-color: #0d6efd;
+  border-color: var(--secondary);
   box-shadow: 0 0 0 0.22rem rgba(13,110,253,0.14);
   outline: none;
 }

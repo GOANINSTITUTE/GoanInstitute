@@ -27,8 +27,8 @@ const SmallContact = () => {
       return;
     }
     emailjs.send(
-      'service_90e86kd',        // replace with your EmailJS service ID
-      'template_cufnh67',       // replace with your EmailJS template ID
+      'service_5vu0uz3',        // replace with your EmailJS service ID
+      'template_zmompmr',       // replace with your EmailJS template ID
       {
         from_name: form.name,
         from_email: form.email,
@@ -36,7 +36,7 @@ const SmallContact = () => {
         email: form.email,
         title: 'Contact Form Request',
       },
-      'UkSYlWThhwfDLEYAr'      // replace with your EmailJS public key
+      'bWp1_bBj4-hsTtXtQ'     
     )
       .then(() => {
         localStorage.setItem(emailKey, now.toString());
@@ -53,13 +53,13 @@ const SmallContact = () => {
     <div className="contact-main-wrapper">
       {/* Left Side (25% desktop / full width mobile) */}
       <div className="contact-left">
-        <h4>Let’s collaborate and create something amazing!</h4>
+        <h4 className='text-dark'>Partner with us to transform ideas into lasting impact.</h4>
         <p>Tell me about your project — I’m all ears.</p>
       </div>
 
       {/* Right Side (75% desktop / full width mobile) */}
       <div className="contact-right">
-        <h4 className="text-center mb-3">Get in Touch</h4>
+        <h4 className="text-center mb-3 text-dark">Get in Touch</h4>
 
         {submitted ? (
           <div className="alert alert-success text-center" role="alert">
@@ -93,7 +93,7 @@ const SmallContact = () => {
               value={form.message}
               onChange={handleChange}
               required
-              className="border-bottom-input"
+              className="border-bottom-input accent"
             />
             <button type="submit" className="btn btn-primary submit-button">
               Send

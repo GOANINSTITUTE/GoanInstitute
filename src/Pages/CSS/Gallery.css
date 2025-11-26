@@ -1,78 +1,52 @@
-.scroller-wrapper {
-  overflow: hidden;
-  width: 100%;
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.gallery-item {
   position: relative;
-  border-radius: 18px;
-  margin-bottom: 2.5rem;
+  overflow: hidden;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.scroller-track {
-  display: flex;
-  width: max-content;
-  animation-name: scroll-left;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  animation-fill-mode: forwards;
-  animation-play-state: running;
-}
-
-.scroller-track-reverse {
-  animation-name: scroll-right;
-}
-
-.scroller-item {
-  flex: none;
-  padding: 0 18px;
-}
-
-.scroller-item img {
-  max-height: 280px;
-  min-width: 360px;
-  width: auto;
-  border-radius: 18px;
+.gallery-item img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
-  user-select: none;
-  pointer-events: none;
-  transition: transform .3s;
-}
-.scroller-item img:hover {
-  transform: scale(1.07) rotate(-1deg);
-  box-shadow: 0 8px 32px #0d6efd55;
+  display: block;
+  transition: transform 0.5s;
 }
 
-@keyframes scroll-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-@keyframes scroll-right {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0);
-  }
+.gallery-item:hover img {
+  transform: scale(1.1);
 }
 
-@media (max-width: 767px) {
-  .scroller-item img {
-    max-height: 150px;
-    min-width: 180px;
-    border-radius: 11px;
-  }
-  .scroller-wrapper {
-    border-radius: 11px;
-  }
+.overlay {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 15px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  transform: translateY(100%);
+  transition: transform 0.3s;
+  text-align: center;
+  font-family: sans-serif;
 }
-.gallery-modal img {
-  user-select: none;
+
+.gallery-item:hover .overlay {
+  transform: translateY(0);
 }
-@media (max-width: 700px) {
-  .gallery-modal img {
-    max-height: 40vh !important;
-  }
+
+.overlay h5 {
+  margin: 0 0 5px;
+  font-size: 1.1rem;
+}
+
+.overlay p {
+  font-size: 0.9rem;
+  margin: 0;
 }

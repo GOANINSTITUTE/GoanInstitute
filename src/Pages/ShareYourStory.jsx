@@ -1,8 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase-config";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from "firebase/firestore";
 
-// Default profile icon URLs (icons stored as URLs)
+// 🔹 Default Profile Icons
 const PROFILE_ICONS = {
   male: "https://res.cloudinary.com/dgxhp09em/image/upload/v1754493587/man_yuwvpt.png",
   female: "https://res.cloudinary.com/dgxhp09em/image/upload/v1754494022/woman_xlnrsu.png",
@@ -15,284 +21,415 @@ const GENDERS = [
   { key: "other", label: "Other", icon: PROFILE_ICONS.other },
 ];
 
-const ShareYourStory = ({ onSubmitted }) => {
+const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
   const [form, setForm] = useState({
     name: "",
     title: "",
     text: "",
     stars: 5,
-    gender: "",  // Keep gender for info or later use
-    imageUrl: "", // Always store avatar or icon link here
+    gender: "",
+    imageUrl: "",
+    type: "student",
   });
 
-  const [showImageDialog, setShowImageDialog] = useState(null); // null | "ask" | "choose-gender" | "upload"
+  const [showImageDialog, setShowImageDialog] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  // Called when user clicks "Add/Change Photo"
+  // 🟦 Prefill when editing
+  useEffect(() => {
+    if (editData) {
+      setForm({
+        name: editData.name || "",
+        title: editData.title || "",
+        text: editData.text || "",
+        stars: editData.stars || 5,
+        gender: editData.gender || "",
+        imageUrl: editData.imageUrl || "",
+        type: editData.type || "student",
+      });
+    } else {
+      setForm({
+        name: "",
+        title: "",
+        text: "",
+        stars: 5,
+        gender: "",
+        imageUrl: "",
+        type: "student",
+      });
+      setDone(false);
+    }
+  }, [editData]);
+
+  // 🟨 Handle "Add Photo" prompt
   const handleProfilePrompt = () => setShowImageDialog("ask");
 
-  // Chooses upload or icon selection
   const handleProfileChoice = (response) => {
-    if (response === "yes") setShowImageDialog("upload");
-    else setShowImageDialog("choose-gender");
+    setShowImageDialog(response === "yes" ? "upload" : "choose-gender");
   };
 
-  // When user picks a gender icon
   const handleGenderSelect = (key) => {
-    setForm(form => ({
-      ...form,
+    setForm((f) => ({
+      ...f,
       gender: key,
       imageUrl: PROFILE_ICONS[key],
     }));
     setShowImageDialog(null);
   };
 
-  // Cloudinary upload handler
   const handleUploadImg = () => {
     setUploading(true);
-    const myWidget = window.cloudinary.createUploadWidget(
+    const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: 'dgxhp09em',
-        uploadPreset: 'unsigned_preset'
+        cloudName: "dgxhp09em",
+        uploadPreset: "unsigned_preset",
       },
       (error, result) => {
         setUploading(false);
         if (!error && result && result.event === "success") {
-          setForm(f => ({
+          setForm((f) => ({
             ...f,
             imageUrl: result.info.secure_url,
-            gender: "", // clear gender since uploaded photo overrides
+            gender: "",
           }));
           setShowImageDialog(null);
         }
       }
     );
-    myWidget.open();
+    widget.open();
   };
 
   const setStarValue = (val) => setForm((f) => ({ ...f, stars: val }));
 
-  // Submit the testimonial
+  // 🟩 Submit new or edit existing
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.name || !form.title || !form.text)
+      return alert("Please fill all required fields.");
+
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "testimonials"), {
-        name: form.name,
-        title: form.title,
-        text: form.text,
-        stars: form.stars,
-        gender: form.gender,
-        imageUrl: form.imageUrl || "",  // Always a single imageUrl field
-        createdAt: serverTimestamp(),
-        pending: true,
-      });
+      if (editData?.id) {
+        // ✏️ Update existing testimonial
+        await updateDoc(doc(db, "testimonials", editData.id), {
+          name: form.name.trim(),
+          title: form.title.trim(),
+          text: form.text.trim(),
+          stars: form.stars,
+          gender: form.gender,
+          imageUrl: form.imageUrl || "",
+          type: form.type || "student",
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        // 🆕 Add new testimonial
+        await addDoc(collection(db, "testimonials"), {
+          name: form.name.trim(),
+          title: form.title.trim(),
+          text: form.text.trim(),
+          stars: form.stars,
+          gender: form.gender,
+          imageUrl: form.imageUrl || "",
+          type: form.type || "student",
+          createdAt: serverTimestamp(),
+          pending: true,
+        });
+      }
+
       setDone(true);
       if (onSubmitted) onSubmitted();
-    } catch {
-      alert("Submission failed. Please try again.");
+    } catch (err) {
+      console.error("Error submitting testimonial:", err);
+      alert("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="card shadow-sm border-0 p-4 mb-5" style={{ borderRadius: "1.2rem" }}>
-      <h4 className="mb-2" style={{ color: "#0d6efd", fontWeight: 700 }}>Share Your Story</h4>
-      <p className="mb-4 text-muted">How has Darvik Foundation touched your life or community? Let us know below!</p>
+    <div
+      className="card shadow-sm border-0 p-4 mb-5 bg-light"
+      style={{ borderRadius: "1.2rem" }}
+    >
+      <h4 className="mb-2 fw-bold" style={{ color: "var(--secondary)" }}>
+        {editData ? "Edit Testimonial" : "Share Your Story"}
+      </h4>
 
-      {done ? (
-        <div className="alert alert-success shadow-sm text-center" role="alert">
+      <p className="mb-4 text-muted">
+        {editData
+          ? "Update your testimonial details below."
+          : "How has GICE Institution touched your life or community? Let us know below!"}
+      </p>
+
+      {done && !editData ? (
+        <div className="alert alert-success text-center shadow-sm">
           <i className="bi bi-check-circle me-2"></i>
           Thank you for sharing your story! We value your voice.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="row g-3 px-md-3 px-1">
-          {/* Profile */}
+          {/* Profile Photo */}
           <div className="col-12 text-center mb-3">
-            <div className="d-flex flex-column align-items-center position-relative" style={{ width: 92, height: 92, margin: "0 auto" }}>
+            <div
+              className="d-flex flex-column align-items-center position-relative"
+              style={{ width: 92, height: 92, margin: "0 auto" }}
+            >
               {form.imageUrl ? (
-                <img src={form.imageUrl} alt={form.name || "profile"} 
+                <img
+                  src={form.imageUrl}
+                  alt="profile"
                   className="img-fluid rounded-circle"
                   style={{ width: 88, height: 88, objectFit: "cover" }}
                 />
               ) : (
-                <span role="img" aria-label="avatar-placeholder" className="d-flex justify-content-center align-items-center rounded-circle bg-light" 
-                  style={{ width: 88, height: 88, fontSize: 48, color: "#adb5bd" }}>
+                <div
+                  className="d-flex justify-content-center align-items-center rounded-circle bg-light"
+                  style={{
+                    width: 88,
+                    height: 88,
+                    fontSize: 48,
+                    color: "#888",
+                  }}
+                >
                   <i className="bi bi-person-fill"></i>
-                </span>
+                </div>
               )}
 
               <button
                 type="button"
-                className="btn btn-primary btn-sm position-absolute bottom-0 end-0 mb-1 me-1 p-1 rounded-circle"
-                style={{ width: 32, height: 32, fontSize: 14, display: "flex", justifyContent: "center", alignItems: "center" }}
+                className="btn btn-secondary btn-sm position-absolute bottom-0 end-0 mb-1 me-1 p-1 rounded-circle"
+                style={{
+                  width: 32,
+                  height: 32,
+                  fontSize: 14,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
                 onClick={handleProfilePrompt}
                 disabled={uploading || submitting}
-                aria-label="Choose profile photo"
               >
                 <i className="bi bi-camera"></i>
               </button>
             </div>
-            <small className="text-muted">
-              {!form.imageUrl ? "Add a profile photo or pick a gender." : "Profile photo set."}
+            <small className="text-secondary">
+              {!form.imageUrl
+                ? "Add a profile photo or pick a gender."
+                : "Profile photo set."}
             </small>
           </div>
 
-          {/* Modal logic */}
+          {/* Dialogs */}
           {showImageDialog === "ask" && (
-            <div className="mb-2 d-flex flex-column align-items-center w-100">
-              <div className="bg-light rounded-3 border p-3 mb-2 mt-1 shadow-sm" style={{ maxWidth: 340 }}>
-                <div style={{ fontWeight: 500 }}>Would you like to add your real profile photo?</div>
-                <div className="d-flex gap-2 mt-2 justify-content-center">
-                  <button className="btn btn-outline-primary" type="button" onClick={() => handleProfileChoice("yes")}>Yes</button>
-                  <button className="btn btn-outline-secondary" type="button" onClick={() => handleProfileChoice("no")}>No</button>
+            <div className="text-center">
+              <div
+                className="bg-light rounded-3 border p-3 mb-2 shadow-sm"
+                style={{ maxWidth: 340, margin: "0 auto" }}
+              >
+                <p className="mb-2 fw-semibold">
+                  Would you like to upload your real profile photo?
+                </p>
+                <div className="d-flex gap-2 justify-content-center">
+                  <button
+                    type="button"
+                    className="btn btn-accent px-3"
+                    onClick={() => handleProfileChoice("yes")}
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-accent px-3"
+                    onClick={() => handleProfileChoice("no")}
+                  >
+                    No
+                  </button>
                 </div>
-                <button className="btn btn-link text-danger p-0 mt-2" type="button" onClick={() => setShowImageDialog(null)} style={{ fontSize: 13 }}>Cancel</button>
+                <button
+                  className="btn btn-link text-danger mt-2"
+                  type="button"
+                  onClick={() => setShowImageDialog(null)}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}
 
           {showImageDialog === "choose-gender" && (
-            <div className="mb-3 d-flex flex-column align-items-center w-100">
-              <div className="bg-light rounded-3 border p-3 mb-2 shadow-sm" style={{ maxWidth: 360 }}>
-                <div style={{ fontWeight: 500, marginBottom: 8 }}>Which profile icon best fits you?</div>
-                <div className="d-flex gap-3 justify-content-center align-items-center">
-                  {GENDERS.map(g => (
+            <div className="text-center">
+              <div
+                className="bg-light rounded-3 border p-3 shadow-sm"
+                style={{ maxWidth: 360, margin: "0 auto" }}
+              >
+                <p className="fw-semibold mb-2">
+                  Which profile icon fits you best?
+                </p>
+                <div className="d-flex gap-3 justify-content-center">
+                  {GENDERS.map((g) => (
                     <button
                       key={g.key}
                       type="button"
-                      className={`btn d-flex flex-column align-items-center px-3 py-2 ${form.gender === g.key ? 'btn-primary' : 'btn-outline-primary'}`}
-                      style={{ borderRadius: '1rem', minWidth: 78, transition: '0.2s' }}
+                      className={`border-0 bg-transparent text-center ${
+                        form.gender === g.key ? "opacity-100" : "opacity-75"
+                      }`}
                       onClick={() => handleGenderSelect(g.key)}
                     >
-                      <img src={g.icon} alt={g.label} width={38} height={38} className="mb-1" />
-                      <span style={{ fontSize: 14, fontWeight: 600 }}>{g.label}</span>
+                      <img
+                        src={g.icon}
+                        alt={g.label}
+                        width={42}
+                        height={42}
+                        className="mb-1"
+                      />
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>
+                        {g.label}
+                      </div>
                     </button>
                   ))}
                 </div>
-                <button className="btn btn-link text-danger mt-2 p-0" type="button" onClick={() => setShowImageDialog(null)} style={{ fontSize: 13 }}>Cancel</button>
+                <button
+                  className="btn btn-link text-danger mt-2"
+                  type="button"
+                  onClick={() => setShowImageDialog(null)}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}
 
           {showImageDialog === "upload" && (
-            <div className="mb-3 d-flex flex-column align-items-center w-100">
-              <div className="bg-light rounded-3 border p-4 mb-2 shadow-sm text-center" style={{ maxWidth: 340 }}>
-                <div style={{ fontWeight: 500, marginBottom: 8 }}>Upload Profile Photo</div>
+            <div className="text-center">
+              <div
+                className="bg-light rounded-3 border p-4 shadow-sm"
+                style={{ maxWidth: 340, margin: "0 auto" }}
+              >
+                <p className="fw-semibold mb-3">Upload Profile Photo</p>
                 <button
                   type="button"
-                  className="btn btn-success px-4"
-                  style={{ borderRadius: "3rem" }}
+                  className="btn btn-accent px-4"
                   onClick={handleUploadImg}
                   disabled={uploading}
                 >
                   {uploading ? "Uploading..." : "Upload"}
                 </button>
-                <button className="btn btn-link text-danger mt-2" type="button" onClick={() => setShowImageDialog(null)} style={{ fontSize: 13 }}>Cancel</button>
+                <button
+                  className="btn btn-link text-danger mt-2"
+                  type="button"
+                  onClick={() => setShowImageDialog(null)}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}
 
-          {/* Inputs */}
+          {/* Input Fields */}
           <div className="col-sm-6">
             <label className="form-label">Your Name</label>
             <input
               required
-              name="name"
               className="form-control"
               placeholder="Full Name"
               maxLength={44}
               value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
               disabled={submitting}
             />
           </div>
+
           <div className="col-sm-6">
             <label className="form-label">Your Designation / Connection</label>
             <input
               required
-              name="title"
               className="form-control"
-              maxLength={54}
               placeholder="Eg. Parent, Volunteer, Software Engineer…"
+              maxLength={54}
               value={form.title}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
               disabled={submitting}
             />
           </div>
-          <div className="col-sm-12">
+
+          <div className="col-sm-6">
+            <label className="form-label">Type</label>
+            <select
+              className="form-select"
+              value={form.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value })}
+              disabled={submitting}
+            >
+              <option value="student">Student</option>
+              <option value="faculty">Faculty</option>
+              <option value="officestaff">Office Staff</option>
+            </select>
+          </div>
+
+          <div className="col-12">
             <label className="form-label">Your Testimonial</label>
             <textarea
               required
-              name="text"
               className="form-control"
               rows={4}
               maxLength={600}
               placeholder="Share your experience..."
               value={form.text}
-              onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
+              onChange={(e) => setForm({ ...form, text: e.target.value })}
               disabled={submitting}
             />
             <small className="text-muted">{form.text.length}/600 characters</small>
           </div>
 
-          {/* Stars */}
-          <div className="col-12 text-center mb-1">
+          {/* Star Rating */}
+          <div className="col-12 text-center mt-2">
             <StarRating value={form.stars} onChange={setStarValue} />
           </div>
 
-          <div className="col-12 text-end mt-2">
+          {/* Buttons */}
+          <div className="col-12 d-flex justify-content-between align-items-center">
+            {editData && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={onCancelEdit}
+              >
+                Cancel
+              </button>
+            )}
             <button
               type="submit"
               className="btn btn-primary px-4"
               disabled={submitting}
             >
-              {submitting ? "Sending..." : "Submit Testimonial"}
+              {submitting
+                ? "Saving..."
+                : editData
+                ? "Update Testimonial"
+                : "Submit Testimonial"}
             </button>
-          </div>
-
-          <div className="col-12 mt-1 text-muted text-center" style={{ fontSize: "0.97rem" }}>
-            <span>
-              <i className="bi bi-shield-check me-1" />
-              All stories are reviewed before being published.
-            </span>
           </div>
         </form>
       )}
-      <style>{`
-        .star-btn-user {
-          font-size: 1.7rem;
-          cursor: pointer;
-          color: #ffbf00;
-          transition: transform 0.15s;
-          user-select: none;
-        }
-        .star-btn-user.inactive {
-          color: #dee2e6;
-        }
-        .star-btn-user:active {
-          transform: scale(1.18);
-        }
-        .card {
-          background: #fafbfc;
-        }
-      `}</style>
     </div>
   );
 };
 
-// StarRating for users
+// ⭐ Star Rating
 function StarRating({ value = 0, onChange }) {
   return (
     <div style={{ fontSize: 24 }}>
       {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}
-          className={`star-btn-user${star <= value ? "" : " inactive"}`}
-          onClick={onChange ? () => onChange(star) : undefined}
+          onClick={() => onChange && onChange(star)}
+          style={{
+            cursor: "pointer",
+            color: star <= value ? "var(--accent)" : "#ccc",
+            transition: "transform 0.15s",
+          }}
         >
           ★
         </span>

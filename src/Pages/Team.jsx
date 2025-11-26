@@ -1,28 +1,50 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import "./CSS/Team.css";
 import AnimatedHero from "../Components/AnimatedHero";
 import PageTransition from "../Components/PageTransition";
 import { db } from "../firebase-config";
 import { collection, getDocs } from "firebase/firestore";
+import "./CSS/Team.css";
+import clsx from 'clsx';
+const SOCIAL_ICONS = {
+  facebook: { icon: "bi bi-facebook", color: "text-primary" },
+  instagram: { icon: "bi bi-instagram", color: "text-danger" },
+  linkedin: { icon: "bi bi-linkedin", color: "text-primary" },
+  twitter: { icon: "bi bi-twitter", color: "text-info" },
+  youtube: { icon: "bi bi-youtube", color: "text-danger" }
+};
 
 export default function Team() {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(true);
-  const [team, setTeam] = React.useState([]);
+  const [teamRows, setTeamRows] = React.useState([]);
 
   React.useEffect(() => {
     const fetchTeam = async () => {
       try {
         const snapshot = await getDocs(collection(db, "team"));
         let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Sort by sNo ascending, members missing sNo go to end
+
         data.sort((a, b) => {
-          const aSNo = a.sNo !== undefined && a.sNo !== null ? Number(a.sNo) : Number.MAX_SAFE_INTEGER;
-          const bSNo = b.sNo !== undefined && b.sNo !== null ? Number(b.sNo) : Number.MAX_SAFE_INTEGER;
-          return aSNo - bSNo;
+          if ((a.rNo ?? 99) !== (b.rNo ?? 99)) return (a.rNo ?? 99) - (b.rNo ?? 99);
+          return (a.cNo ?? 99) - (b.cNo ?? 99);
         });
-        setTeam(data);
+
+        const grouped = data.reduce((acc, member) => {
+          const rowKey = member.rNo ?? "others";
+          if (!acc[rowKey]) acc[rowKey] = [];
+          acc[rowKey].push(member);
+          return acc;
+        }, {});
+
+        const sortedRows = Object.keys(grouped)
+          .sort((a, b) => Number(a) - Number(b))
+          .map(rowNum => ({
+            rowNumber: Number(rowNum),
+            members: grouped[rowNum]
+          }));
+
+        setTeamRows(sortedRows);
       } catch (err) {
         console.error("Error fetching team:", err);
       } finally {
@@ -32,51 +54,105 @@ export default function Team() {
     fetchTeam();
   }, []);
 
+  const TeamCard = ({ member, big }) => (
+      <div
+    className={clsx(
+  "team-card",
+  big && "team-card-lg"
+)}
+    onClick={() => navigate(`/team/${encodeURIComponent(member.name)}`, { state: { member } })}
+  >
+
+      <div className="team-card-inner">
+        <img src={member.img} alt={member.name} className="team-img mb-3" />
+        <h6 className="team-name mb-1">{member.name}</h6>
+        <div className="team-role mb-2">{member.role}</div>
+        <div className="team-social d-flex justify-content-center gap-3">
+          {Object.entries(SOCIAL_ICONS).map(([key, { icon, color }]) =>
+            member.social?.[key] ? (
+              <a
+                key={key}
+                href={member.social[key]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`team-social-link ${color}`}
+                onClick={e => e.stopPropagation()}
+              >
+                <i className={icon}></i>
+              </a>
+            ) : null
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <PageTransition className="team-page bg-light">
-      {/* Animated Hero Section */}
-      <AnimatedHero 
+    <PageTransition className="team-page">
+      <AnimatedHero
         title="Meet Our Team"
         subtitle="The passionate people behind Darvik Foundation's mission and impact."
         className="team-hero"
         overlayColor="rgba(255,193,7,0.15)"
       />
 
-      {/* Team Grid (shows loader until ready) */}
-      <section className="container py-5">
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-            <div style={{ width: 48, height: 48, border: '5px solid #eee', borderTop: '5px solid #0d6efd', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
-          </div>
-        ) : (
-          <div className="row justify-content-center g-4">
-            {team.map((member, idx) => (
-              <div className="col-12 col-sm-6 col-lg-3" key={member.id || idx}>
-                <div
-                  className="bg-white rounded shadow-sm p-4 text-center h-100 team-card-hover"
-                  style={{ cursor: "pointer", transition: "box-shadow 0.2s" }}
-                  onClick={() => navigate(`/team/${encodeURIComponent(member.name)}`, { state: { member } })}
-                >
-                  <img src={member.img} alt={member.name} className="rounded-circle mb-3" style={{ width: 110, height: 110, objectFit: "cover", border: "3px solid #0d6efd" }} />
-                  <h5 className="mb-1">{member.name}</h5>
-                  <div className="text-primary mb-2">{member.role}</div>
-                  <p className="small text-muted mb-0">{member.bio}</p>
+      <section className="team-section py-5">
+        <div className="container-fluid px-4"> {/* Full width with some padding */}
+          {loading ? (
+            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 600 }}>
+              <div
+                className="spinner"
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderTop: "5px solid var(--primary)",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite"
+                }}
+              />
+            </div>
+          ) : (
+            teamRows.map((row, idx) => (
+              <div key={idx} className={`team-row team-row-${row.rowNumber} mb-5`}>
+                <div className="row g-4 justify-content-center"> {/* Centered content */}
+                  {row.members.map(m => (
+                    <div
+                      key={m.id}
+                      className={`${row.rowNumber === 1
+                        ? "col-12 col-sm-8 col-md-6 col-lg-4"
+                        : row.rowNumber === 2
+                        ? "col-6 col-sm-4 col-md-3 col-lg-2"
+                        : row.rowNumber === 3
+                        ? "col-6 col-sm-4 col-md-3"
+                        : "col-6 col-md-4 col-lg-3"
+                      }`}
+                    >
+                      <TeamCard member={m} big={row.rowNumber === 1} />
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="py-5 bg-pink text-white text-center position-relative" style={{ background: "linear-gradient(90deg, #f3268c 60%, #0d6efd 100%)" }}>
-        <div className="container position-relative z-2">
+      <section className="team-cta py-5 text-white text-center position-relative">
+        <div className="container-fluid position-relative z-2">
           <h2 className="fw-bold mb-3">Want to Join Our Team?</h2>
-          <p className="lead mb-4">We're always looking for passionate individuals to help us make a difference. Reach out to learn more about volunteering or partnering with us!</p>
-          <a href="/contact" className="btn btn-light btn-lg px-4 py-2 fw-semibold shadow">Contact Us</a>
+          <p className="lead mb-4 text-primary">
+            We're always looking for passionate individuals to help us make a
+            difference. Reach out to learn more about volunteering or partnering
+            with us!
+          </p>
+          <a
+            href="/contact"
+            className="btn btn-primary btn-lg px-4 py-2 fw-semibold shadow"
+          >
+            Contact Us
+          </a>
         </div>
-        <div className="position-absolute top-0 start-0 w-100 h-100" style={{ opacity: 0.07, background: "url('/logodarvik.png') center/contain no-repeat" }}></div>
+        <div className="team-cta-overlay" />
       </section>
     </PageTransition>
   );

@@ -1,341 +1,697 @@
-// src/pages/Home.jsx
-
-import React, { useEffect, useState } from "react";
-import { createPortal } from 'react-dom';
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { db } from "../firebase-config";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
-import { Link, useNavigate } from "react-router-dom";
-import "./CSS/Home.css";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import {  query, orderBy, limit } from "firebase/firestore";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { Link  } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import GrowthSkillsSection from "../Pages/GrowthSkillsSection.jsx";
 import Hero from "../Components/Hero.jsx";
+import SmallContact from "../Components/Contact_home.jsx";
+import PageTransition from "../Components/PageTransition";
+import OperationsSection from "./OperationsSection.jsx";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
-import SmallContact from "../Components/Contact_home.jsx";
-import PageTransition from "../Components/PageTransition";
-import HomeTestimonial from "../Components/HomeTestimonials.jsx";
-// Suppress ResizeObserver loop error globally (development only)
-if (process.env.NODE_ENV === 'development') {
-  const originalError = console.error;
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('ResizeObserver loop completed')
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-}
-
+import "./CSS/Home.css";
+import CountUp from "react-countup";
+import VisibilitySensor from "react-visibility-sensor";
+import Impact from "../Components/Home/Impact.jsx";
 function Home() {
   const [galleryItems, setGalleryItems] = useState([]);
-  const [newsItems, setNewsItems] = useState([]);
   const [services, setServices] = useState([]);
-  
-  const [newsModalOpen, setNewsModalOpen] = useState(false);
-  const [activeNews, setActiveNews] = useState(null);
+  const [latestNews, setLatestNews] = useState([]);
+  const [visionImage, setVisionImage] = useState("");
+  const isMobile = window.innerWidth <= 768;
   const navigate = useNavigate();
+  // 🔹 Competence section states
+  const [competences, setCompetences] = useState([]);
+  const [competenceBg, setCompetenceBg] = useState("");
 
-  useEffect(() => {
-    // Handle ResizeObserver errors
-    const handleResizeObserverError = (e) => {
-      if (e.message === 'ResizeObserver loop completed with undelivered notifications.') {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
+  const storage = getStorage();
 
-    window.addEventListener('error', handleResizeObserverError);
+  const fadeUpAnimation = {
+    animationName: "fadeUp",
+    animationDuration: "1.2s",
+    animationTimingFunction: "ease-out",
+    animationFillMode: "forwards",
+    opacity: 0,
+    transform: "translateY(20px)",
+    animationPlayState: "paused",
+  };
 
-    const fetchGallery = async () => {
+  const fadeUpAnimationSubtitle = { ...fadeUpAnimation, animationDuration: "1.6s" };
+
+  const fadeUpCardAnimation = (delay) => ({
+    animationName: "fadeUpCards",
+    animationDuration: "1.2s",
+    animationTimingFunction: "ease-out",
+    animationFillMode: "forwards",
+    animationDelay: delay,
+    opacity: 0,
+    transform: "translateY(30px)",
+    animationPlayState: "paused",
+  });
+
+  // 🔹 Reusable Fetcher for Collections
+  const fetchData = useCallback(
+    async (colName, orderField = "uploadedAt", limitCount = 6) => {
       try {
-        const galleryRef = collection(db, "gallery");
-        // Query: order by 'uploadedAt' descending, limit 5 latest images
-        const galleryQuery = query(galleryRef, orderBy("uploadedAt", "desc"), limit(6));
-        const snap = await getDocs(galleryQuery);
-        const storage = getStorage();
+        const q = query(collection(db, colName), orderBy(orderField, "desc"), limit(limitCount));
+        const snap = await getDocs(q);
 
-        const items = await Promise.all(
+        return Promise.all(
           snap.docs.map(async (doc) => {
             const data = doc.data();
-            let imageUrl = data.imageUrl || '';
-            if (imageUrl && !imageUrl.startsWith('http')) {
+            let imageUrl = data.imageUrl || "";
+
+            if (imageUrl && !imageUrl.startsWith("http")) {
               try {
                 imageUrl = await getDownloadURL(ref(storage, imageUrl));
-              } catch (e) {
-                console.error("Error getting download URL for", imageUrl, e);
-                imageUrl = '';
+              } catch {
+                imageUrl = "";
               }
             }
             return { id: doc.id, ...data, imageUrl };
           })
         );
-        setGalleryItems(items);
-        console.log("Gallery Items:", items);
-      } catch (error) {
-        console.error("Error fetching gallery items:", error);
+      } catch (err) {
+        console.error(`Error fetching ${colName}:`, err);
+        return [];
       }
-    };
+    },
+    [storage]
+  );
 
-    const fetchNews = async () => {
+  // 🔹 Updated useEffect with proper Vision image fetching (Single document)
+  useEffect(() => {
+    const loadAll = async () => {
       try {
-        const snap = await getDocs(collection(db, "news"));
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setNewsItems(items.slice(0, 3));
+        const [
+          galleryData,
+          servicesData,
+          newsData,
+          competenceImagesData,
+        ] = await Promise.all([
+          fetchData("gallery", "uploadedAt", 6),
+          fetchData("services", "createdAt", 6),
+          fetchData("news", "updatedAt", 3),
+          fetchData("competenceImages", "createdAt", 20),
+        ]);
+
+        setGalleryItems(galleryData);
+        setServices(servicesData);
+        setLatestNews(newsData);
+
+        // 🔹 Fetch single Vision Image
+        const visionRef = doc(db, "visionImages", "visionImage");
+        const visionSnap = await getDoc(visionRef);
+        if (visionSnap.exists()) {
+          setVisionImage(visionSnap.data().imageUrl);
+        }
+
+        // 🔹 Split competence data
+        const bgImage = competenceImagesData.find((img) => img.type === "background");
+        const compImages = competenceImagesData.filter((img) => img.type === "competence");
+
+        if (bgImage) setCompetenceBg(bgImage.imageUrl);
+        setCompetences(compImages);
+
       } catch (error) {
-        console.error("Error fetching news:", error);
+        console.error("Error loading data:", error);
       }
     };
 
-    const fetchServices = async () => {
-      try {
-        const snap = await getDocs(collection(db, "services"));
-        const items = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setServices(items.slice(0, 3));
-      } catch (error) {
-        console.error("Error fetching services:", error);
-      }
-    };
+    loadAll();
+  }, [fetchData]);
 
-   
+  // 🔹 Scroll + Bubble Logic
+  const scrollRef = useRef(null);
+  const [activeBubble, setActiveBubble] = useState(0);
+  const [bubbleCount, setBubbleCount] = useState(0);
 
-    fetchGallery();
-    fetchNews();
-    fetchServices();
+  useEffect(() => {
+    if (scrollRef.current) {
+      const totalCards = competences.length;
+      const cardsPerView = Math.floor(scrollRef.current.offsetWidth / 320) || 1;
+      setBubbleCount(Math.ceil(totalCards / cardsPerView));
+    }
+  }, [competences]);
 
-    return () => {
-      window.removeEventListener('error', handleResizeObserverError);
-    };
-  }, []);
+  const handleScroll = (direction) => {
+    if (scrollRef.current) {
+      const container = scrollRef.current;
+      container.scrollBy({
+        left: direction === "left" ? -380 : 380,
+        behavior: "smooth",
+      });
+    }
+  };
 
-  const handleNewsClick = (item) => {
-    if (window.innerWidth < 768) {
-      // Mobile: navigate to /news passing newsId
-      navigate("/news", { state: { newsId: item.id } });
-    } else {
-      // Desktop: open modal
-      setActiveNews(item);
-      setNewsModalOpen(true);
+  const handleScrollEvent = () => {
+    if (scrollRef.current) {
+      const scrollLeft = scrollRef.current.scrollLeft;
+      const width = scrollRef.current.offsetWidth;
+      setActiveBubble(Math.round(scrollLeft / width));
     }
   };
 
   return (
     <PageTransition>
-      <div className="home-page bg-light">
-        <div className="home-landing">
-          <Hero />
+      <div className="home-page bg-background ">
+        {/* 🔹 Hero Section */}
+        <Hero />
+        <section 
+  style={{
+    backgroundImage: `
+      linear-gradient(
+        rgba(0,0,0,0.65),
+        rgba(0,0,0,0.8)
+      ),
+      url("${visionImage || 'https://res.cloudinary.com/dgxhp09em/image/upload/v1763572510/wwxtqpc1lok1fkrlnyjf.jpg'}")
+    `,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+    paddingBottom: "30px",
+    marginBottom: "20px",
+    
+  }}
+>
+<div
+    style={{
+      position: "absolute",
+      inset: 0,
+      background: "rgba(0,0,0,0.5)", // change 0.5 to adjust opacity
+      backdropFilter: "none",
+      zIndex: 1,
+    }}
+  />
 
-          {/* Home Gallery Section: Two-Column Modern Layout */}
-          <section className="gallery-grid-section py-5" style={{ position: "relative", overflow: "hidden" }}>
-            <div className="gallery-animated-circles">
-              <div className="circle circle1"></div>
-              <div className="circle circle2"></div>
-              <div className="circle circle3"></div>
-            </div>
-            <div className="container" style={{ position: "relative", zIndex: 1 }}>
-              <h2 className="section-title">Latest Gallery</h2>
-              <div className="row g-4">
-                {/* Now rendering maximum 5 latest images */}
-                {galleryItems.map((item, index) => (
-                  <div key={item.id} className="col-lg-6 col-md-6 col-12">
-                    <div
-                      className="gallery-card animate-fade-slide"
-                      style={{ animationDelay: `${index * 0.12}s` }}
-                    >
-                      <img src={item.imageUrl} alt={item.title || "Gallery"} className="gallery-card-img" />
-                      <div className="gallery-card-overlay">
-                        <h4 className="gallery-card-title">{item.title || "Untitled"}</h4>
-                        <p className="gallery-card-desc">{item.description || "No description."}</p>
-                        <Link to="/gallery" className="btn btn-primary btn-sm">View More</Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+        {/* Mission & Vision Cards */}
+<div
+  className="container hero-cards-wrapper mt-5 mb-5"
+  style={{ position: "relative", zIndex: 9999 }}
+>
+  <div className="row g-4 justify-content-center mb-5">
 
-          {/* News Preview - Notification Popup Style */}
-          <section className="home-section news-section">
-            <div className="container">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="section-title mb-0">Latest News</h2>
-                <Link to="/news" className="btn btn-outline-primary btn-sm">Read More</Link>
-              </div>
-              <div className="row g-3">
-                {newsItems.map((item, index) => (
-                  <div className="col-12 col-md-6 col-lg-4" key={item.id}>
-                    <div className="news-popup-card d-flex align-items-center p-3 shadow-sm animate-fade-slide" style={{ borderRadius: 18, background: '#f7f9fc', minHeight: 120, position: 'relative', border: '1px solid #e3e6ee', animationDelay: `${index * 0.12}s` }}>
-                      <div className="news-img-wrapper me-3" style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, boxShadow: '0 2px 8px #0d6efd22', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12, cursor: 'pointer' }} onClick={() => handleNewsClick(item)} />
-                        ) : (
-                          <span className="bi bi-newspaper" style={{ fontSize: 32, color: '#0d6efd' }}></span>
-                        )}
-                      </div>
-                      <div className="news-info flex-grow-1">
-                        <h5 className="mb-1 fw-bold" style={{ color: '#0d6efd' }}>{item.title}</h5>
-                        <p className="text-muted small mb-1">{item.date ? new Date(item.date).toLocaleDateString() : ""}</p>
-                        <p className="mb-0" style={{ fontSize: 15, color: '#333', maxHeight: 48, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {item.description && item.description.length > 60 ? item.description.slice(0, 60) + '...' : item.description}
-                        </p>
-                        <button className="btn btn-link p-0 mt-1" style={{ color: '#0d6efd', fontWeight: 500, fontSize: 15 }} onClick={() => handleNewsClick(item)}>Read More</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+    {/* Vision */}
+    <div className="col-12 col-md-5 ">
+      <div
+        className="p-4 shadow-lg h-100 hero-card"
+        style={{
+          background: "rgba(30, 30, 30, 0.65)",
+          border: "1px solid rgba(255, 255, 255, 0.18)",
+          backdropFilter: "blur(14px)",
+          transition: "0.3s",
+          borderRadius: "16px",
+          cursor: "default",
+          ...fadeUpCardAnimation("2s"),
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-8px)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+      >
+        <h3
+          className="text-warning fw-bold text-center mb-3"
+          style={{ letterSpacing: "1.5px", fontSize: isMobile ? "1.1rem" : "1.3rem" }}
+        >
+          OUR VISION
+        </h3>
+
+        <p className="text-light text-center" style={{ fontSize: isMobile ? "0.9rem" : "1rem", lineHeight: 1.65 }}>
+          To Guide, Inspire, Challenge, Empower young minds by imparting knowledge, values,
+          and skills that shape character and prepare them to become responsible and visionary citizens.
+        </p>
+
+        <div
+          style={{
+            height: "1px",
+            margin: "15px auto",
+            width: "60%",
+            background: "linear-gradient(90deg, transparent, #ffc107, transparent)",
+          }}
+        />
+
+        <p className="text-warning text-center fw-semibold small mb-0">
+           Guide • Inspire • Challenge • Empower
+        </p>
+      </div>
+    </div>
+
+    {/* Mission */}
+    <div className="col-12 col-md-5 ">
+      <div
+        className="p-4 shadow-lg h-100 hero-card"
+        style={{
+          background: "rgba(30, 30, 30, 0.65)",
+          border: "1px solid rgba(255, 255, 255, 0.18)",
+          backdropFilter: "blur(14px)",
+          transition: "0.3s",
+          borderRadius: "16px",
+          cursor: "default",
+          ...fadeUpCardAnimation("2.3s"),
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-8px)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+      >
+        <h3
+          className="text-warning fw-bold text-center mb-3"
+          style={{ letterSpacing: "1.5px", fontSize: isMobile ? "1.1rem" : "1.3rem" }}
+        >
+          OUR MISSION
+        </h3>
+
+        <p className="text-light text-center" style={{ fontSize: isMobile ? "0.9rem" : "1rem", lineHeight: 1.65 }}>
+          To implement advanced learning programs that develop communication skills, improve employability,
+          and build environmental and social awareness in students.
+        </p>
+
+        <div
+          style={{
+            height: "1px",
+            margin: "15px auto",
+            width: "60%",
+            background: "linear-gradient(90deg, transparent, #ffc107, transparent)",
+          }}
+        />
+
+        <p className="text-warning text-center fw-semibold small mb-0">
+          Educate
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+  {/* Moto — Centered */}
+  <div className="row justify-content-center mt-4 mb-4">
+    <div className="col-12 col-md-6">
+      <div
+        className="p-4 shadow-lg h-100 hero-card"
+        style={{
+          background: "rgba(35, 35, 35, 0.75)",
+          border: "1px solid rgba(255, 255, 255, 0.18)",
+          backdropFilter: "blur(16px)",
+          transition: "0.3s",
+          borderRadius: "18px",
+          cursor: "default",
+          boxShadow: "0 0 20px rgba(255, 193, 7, 0.3)",
+          ...fadeUpCardAnimation("2.6s"),
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.03)")}
+        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      >
+        <h3
+          className="text-warning fw-bold text-center mb-3"
+          style={{ letterSpacing: "1.8px", fontSize: isMobile ? "1.15rem" : "1.35rem" }}
+        >
+          OUR MOTO
+        </h3>
+
+        <p
+          className="text-light text-center"
+          style={{
+            fontSize: isMobile ? "1rem" : "1.3rem",
+            fontWeight: "600",
+            letterSpacing: "1.2px",
+          }}
+        >
+          Literacy & Employability
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+
+  <OperationsSection/>   
+        
+
+  <GrowthSkillsSection />
+
+<section
+  className="py-5 text-light moving-bg"
+  style={{
+    background: competenceBg
+      ? `linear-gradient(rgba(39, 26, 15, 0.66), rgba(0, 0, 0, 0.16)), url(${competenceBg}) center bottom / cover no-repeat`
+      : "linear-gradient(135deg, #1214177c, #1b1f25)",
+    minHeight: "70vh",
+    overflow: "hidden",
+    paddingTop: "80px",
+    display: "flex",
+    flexDirection: "column",
+  }}
+>
+
+  {/* Heading stays at the top */}
+<h3 className="fw-bold text-warning mb-5 text-center display-6">
+  EDUCATIONAL SERVICES WE PROVIDE
+</h3>
+
+
+  {/* Cards container — ONLY this pushes items to bottom */}
+<div
+  className="container-fluid px-4 position-relative"
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "flex-end",
+    flex: 1,               // 👈 THIS pushes cards to bottom
+  }}
+>
+
+
+    {/* PC View – Horizontal Row */}
+    <div
+      className="d-none d-md-flex"
+      style={{
+        gap: "20px",
+        overflowX: "auto",
+        paddingBottom: "10px",
+        paddingTop: "10px",
+        scrollBehavior: "smooth",
+        width: "100%",
+      }}
+    >
+      {competences.map((item, i) => (
+        <div
+          key={item.id || i}
+          className="card border-0 shadow-lg text-start"
+          style={{
+            minWidth: "600px",
+            background: "rgba(30, 30, 30, 0.65)",
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            transition: "transform 0.3s ease, box-shadow 0.3s ease",
+            cursor: "pointer",
+          }}
+          onClick={() => item.link && navigate(item.link)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-5px)";
+            e.currentTarget.style.boxShadow = "0 10px 20px #332020e3";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow = "0 5px 15px #4b2e2e9f";
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+              padding: "20px",
+              height: "220px",
+            }}
+          >
+            {/* Left Image */}
+            <div
+              style={{
+                width: "45%",
+                height: "100%",
+                background: `url(${item.imageUrl}) center/cover no-repeat`,
+                borderRadius: "10px",
+              }}
+            ></div>
+
+            {/* Right Content */}
+            <div
+              style={{
+                width: "55%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <h5 className="text-warning fw-bold mb-3" style={{ fontSize: "1.7rem" }}>
+                {item.title || "Untitled Skill"}
+              </h5>
+
+              <p className="text-light" style={{ fontSize: "1rem" }}>
+                {item.desc || "No description available."}
+              </p>
             </div>
-            {/* News Modal Popup */}
-            {newsModalOpen && activeNews && createPortal(
-              <div className="news-modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: '#0008', zIndex: 2147483647, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setNewsModalOpen(false)}>
-                <div className={`news-modal-content${window.innerWidth < 768 ? ' news-modal-mobile' : ''}`} style={{ background: '#fff', borderRadius: 32, maxWidth: 900, width: '96vw', minHeight: 480, padding: 0, position: 'relative', boxShadow: '0 8px 32px #0d6efd22', display: 'flex', flexDirection: 'row', overflow: 'hidden', zIndex: 2147483647 }} onClick={e => e.stopPropagation()}>
-                  <button className="btn-close  bi-x news-modal-close" onClick={() => setNewsModalOpen(false)}></button>
-                  {/* Left Column: Title & Description */}
-                  <div className="news-modal-left p-5 d-flex flex-column justify-content-center" style={{userSelect: 'none', flex: 1, minWidth: 0 }}>
-                    <h2 className="fw-bold mb-3" style={{ color: '#0d6efd', fontSize: 32, lineHeight: 1.2 }}>{activeNews.title}</h2>
-                    <p className="text-muted mb-2" style={{ fontSize: 15 }}>{activeNews.date ? new Date(activeNews.date).toLocaleDateString() : ""}</p>
-                    <div style={{ fontSize: 18, color: '#333', fontWeight: 400, lineHeight: 1.6, fontFamily: 'inherit', maxHeight: 320, overflowY: 'auto', letterSpacing: 0.1, fontStyle: 'normal' }}>{activeNews.description}</div>
-                    <Link to="/news" className="btn btn-outline-primary mt-4 align-self-start">Go to News Page</Link>
-                  </div>
-                  {/* Right Column: Image with Zoom & Scroll */}
-                  <div className="news-modal-right d-flex flex-column align-items-center justify-content-center bg-light" style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #e3e6ee', position: 'relative', padding: 0 }}>
-                    <div style={{ position: 'relative', width: '100%', height: 420, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto' }}>
-                      {activeNews.imageUrl ? (
-                        <ZoomableImage src={activeNews.imageUrl} alt={activeNews.title} />
-                      ) : (
-                        <span className="bi bi-newspaper" style={{ fontSize: 64, color: '#0d6efd' }}></span>
-                      )}
-                    </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Mobile View */}
+    <div className="d-md-none">
+      {competences.map((item, i) => (
+        <div
+          key={item.id || i}
+          className="card border-0 shadow-lg mb-4"
+          style={{
+            width: "100%",
+            background: "rgba(30, 30, 30, 0.65)",
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            cursor: "pointer",
+          }}
+          onClick={() => item.link && navigate(item.link)}
+        >
+          {/* Image */}
+          <div
+            style={{
+              width: "100%",
+              height: "200px",
+              background: `url(${item.imageUrl}) center/cover no-repeat`,
+              borderTopLeftRadius: "10px",
+              borderTopRightRadius: "10px",
+            }}
+          ></div>
+
+          {/* Content */}
+          <div style={{ padding: "15px" }}>
+            <h5 className="text-warning fw-bold mb-2" style={{ fontSize: "1.2rem" }}>
+              {item.title || "Untitled Skill"}
+            </h5>
+
+            <p className="text-light" style={{ fontSize: "0.95rem" }}>
+              {item.desc || "No description available."}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+
+
+
+
+
+<Impact/>
+
+
+        {/* 🔹 Testimonials Section */}
+        <section className="py-5 bg-light text-center text-dark">
+          <div className="container">
+            <h3 className="fw-bold mb-4 text-dark">OUR CLIENTS' TESTIMONIALS</h3>
+            <div className="row justify-content-center g-4">
+              {[
+                {
+                  name: "Ms.Mercy George",
+                  title: "Commendable collaboration",
+                  quote:
+                    "It was indeed a fine decision taken up by our school to collaborate with GICE..........",
+                  designation: "Devamatha CMI Public School, Thrissur",
+                  },
+                {
+                  name: "Ms.Subha P M ",
+                  title: "Evident Changes !",
+                  quote:
+                    "We are very happy and satisfied with the GICE faculty member.......",
+                  designation: "Sree Narayana Public School , Kottayam",
+                },
+                {
+                  name: "Rev.Sr.Saphalya CMC ",
+                  title: "Dedicated for the upliftment ",
+                  quote:
+                    "GICE faculty members are creative, dedicated, spending time.......",
+                  designation: "Carmel High School, Pen,Maharashtra",
+                },
+                {
+                  name: "Rev.Fr.Arun Painedath CMI ",
+                  title: "Leisure time activities ",
+                  quote:
+                    "I would like to specially mention PLT ( Pleasure in Leisure Time) activity arranged during the lunch break......",
+                  designation: "St.Xaviers CMI School , Thrissur",
+                },
+                {
+                  name: "Ms.Carthika S",
+                  title: "Painstaking efforts",
+                  quote:
+                    "The GICE faculty member moulds our students exceptionally through her painstaking efforts .......",
+                  designation: "Gayathri Central School, Kottayam",
+                },
+                {
+                  name: "Rev.Sr.Savitha",
+                  title: "Comprehensive English Learning ",
+                  quote:
+                    "The GICE faculty member teaches all aspects of English—reading, writing, listening, and speaking....",
+                  designation: "St.Teresa’s convent girls L.P School , Ernakulam",
+                }
+              ].map((t, i) => (
+                <div className="col-12 col-md-5" key={i}>
+                  <div className="card border-0 shadow-sm p-4 h-100">
+                    <i
+                      className="bi bi-chat-right-quote text-primary mb-3"
+                      style={{ fontSize: "2rem" }}
+                    ></i>
+                    <h5 className="fw-bold text-dark">{t.title}</h5>
+                    <p className="fst-italic small">"{t.quote}"</p>
+                    <h6 className="text-muted small">- {t.name}</h6>
+                    <h6 className="text-muted small">{t.designation}</h6>
                   </div>
                 </div>
-              </div>,
-              document.body
-            )}
-          </section>
-
-          {/* Services Preview */}
-          <section className="home-section services-section">
-            <div className="container">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="section-title mb-0">Milestones of Compassion</h2>
-                <Link to="/services" className="btn btn-outline-primary btn-sm">See All</Link>
-              </div>
-              <div className="row">
-                {services.map((item, index) => (
-                  <div className="col-md-4 mb-4" key={item.id}>
-                    <div className="card home-card h-100 text-center animate-fade-slide" style={{ animationDelay: `${index * 0.12}s` }}>
-                      {item.imageUrl && (
-                        <img src={item.imageUrl} className="card-img-top" alt={item.title} style={{ objectFit: "cover", height: "140px" }} />
-                      )}
-                      <div className="card-body">
-                        <h5 className="card-title mb-1">{item.title}</h5>
-                        <p className="card-text mb-0">{item.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
-          </section>
 
-          {/* Testimonials Slider */}
-          <HomeTestimonial/>
+            <div className="mt-4">
+              <Link to="/testimonials" className="btn btn-primary btn-lg">
+                View More Testimonials
+              </Link>
+            </div>
+            <div className="row justify-content-center g-4 mt-3">
+              {[
+                {
+                  name: "Benila",
+                  title: "Skill Development!",
+                  quote:
+                    "I have dedicated 14 years to GICE as a Faculty member specialising in skill development. During this time .......",
+                  designation: "Faculty Member, GICE",
+                },
+                {
+                  name: "Jismi Raj",
+                  title: "Public Speaking into Reality!",
+                  quote:
+                    "Teaching is my passion, and GICE has helped me grow while inspiring others. It turned my dream of anchoring and public speaking .......",
+                  designation: "Faculty Member, GICE",
+                },
+                {
+                  name: "Sruthy",
+                  title: " Interacting with students!",
+                  quote:
+                    "Being a Skill Development Faculty brings me joy every day. Interacting with students energizes me and sparks my creativity. .......",
+                  designation: "Faculty Member, GICE",
+                },
+                {
+                  name: "Akash D",
+                  title: "Work with the students!",
+                  quote:
+                    "I have been working at GICE for the last two years, and so far, the journey has been memorable .......",
+                  designation: "Faculty Member, GICE",
+                },
+                {
+                  name: "Anjitha",
+                  title: "Skill Based Learning!",
+                  quote:
+                    "Being a part of GICE as a skill development faculty member has been a truly rewarding journey. The platform has not only enhanced my teaching skills.......",
+                  designation: "Faculty Member, GICE",
+                },
+                {
+                  name: "Arindam Saha",
+                  title: "Future of students!",
+                  quote:
+                    "Shaping the future of students has always been on my bucket list, and GICE provided me with a platform .......",
+                  designation: "Faculty Member, GICE",
+                }
+              ].map((t, i) => (
+                <div className="col-12 col-md-5 " key={i}>
+                  <div className="card border-0 shadow-sm p-4 h-100 " style={{background: "var(--secondary-light-opaced, #5c443381)",}}>
+                    <i
+                      className="bi bi-chat-right-quote text-eggshel mb-3"
+                      style={{ fontSize: "2rem" }}
+                    ></i>
+                    <h5 className="fw-bold text-dark">{t.title}</h5>
+                    <p className="fst-italic small">"{t.quote}"</p>
+                    <h6 className="text-muted small">- {t.name}</h6>
+                    <h6 className="text-muted small">{t.designation}</h6>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4">
+              <Link to="/GICEFamily" className="btn btn-secondary btn-lg">
+                View More Reviews
+              </Link>
+            </div>
+          </div>
+        </section>
 
-          <SmallContact />
+ <section
+      className="py-5"
+      style={{
+        background: "linear-gradient(90deg,#4b2e2e55 60%,#ffd70015 100%)",
+        color: "#fff",
+        minHeight: "320px",
+      }}
+    >
+      <div className="container">
+        <div className="row align-items-center gy-4">
+          {/* Video Left */}
+          <div className="col-md-6">
+            <div
+              style={{
+                position: "relative",
+                paddingBottom: "56.25%", // 16:9 aspect ratio
+                height: 0,
+                overflow: "hidden",
+                borderRadius: 16,
+                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+              }}
+            >
+              <iframe
+                title="Motivational Video"
+                src="https://www.youtube.com/embed/GMh0TL7YGyk?si=Xsb_OimLgtsFHXQs" // Replace with actual video ID
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  border: "none",
+                  borderRadius: 16,
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+
+          {/* Content Right */}
+          <div className="col-md-6 text-center text-md-start">
+            <h3
+              className="mb-1"
+              style={{
+                color: "var(--accent, #ffd700)",
+                fontWeight: "700",
+                fontSize: "3rem",
+                letterSpacing: "1px",
+                textShadow: "0 2px 8px #4b2e2e80",
+              }}
+            >
+              Dream & Frame<br />
+              
+            </h3>
+            <span style={{ color: "#fff",fontWeight: "700",
+                fontSize: "2.3rem",
+                letterSpacing: "1px",
+                textShadow: "0 2px 8px #4b2e2e80",}}>Your Future</span>
+          </div>
         </div>
+      </div>
+    </section>
+
+        {/* 🔹 Contact Section */}
+        <SmallContact />
       </div>
     </PageTransition>
   );
 }
 
 export default Home;
-
-// ZoomableImage component for modal (must be outside Home)
-function ZoomableImage({ src, alt }) {
-  const [zoom, setZoom] = React.useState(1);
-  const [dragging, setDragging] = React.useState(false);
-  const [origin, setOrigin] = React.useState({ x: 0, y: 0 });
-  const [offset, setOffset] = React.useState({ x: 0, y: 0 });
-
-  const handleZoomChange = (e) => {
-    setZoom(Number(e.target.value));
-    setOffset({ x: 0, y: 0 }); // Reset pan when zoom changes
-  };
-  const handleMouseDown = e => {
-    setDragging(true);
-    setOrigin({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-  };
-  const handleMouseUp = () => setDragging(false);
-  const handleMouseMove = e => {
-    if (dragging) {
-      setOffset({ x: e.clientX - origin.x, y: e.clientY - origin.y });
-    }
-  };
-  React.useEffect(() => {
-    if (!dragging) return;
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  });
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div
-        style={{
-          width: 380,
-          height: 380,
-          overflow: 'hidden',
-          borderRadius: 24,
-          boxShadow: '0 2px 8px #0d6efd22',
-          background: '#fff',
-          position: 'relative',
-          cursor: dragging ? 'grabbing' : 'grab',
-          userSelect: 'none',
-        }}
-        onMouseDown={handleMouseDown}
-      >
-        <img
-          src={src}
-          alt={alt}
-          style={{
-            width: zoom * 380,
-            height: zoom * 380,
-            objectFit: 'contain',
-            transform: `translate(${offset.x}px, ${offset.y}px)`,
-            transition: dragging ? 'none' : 'transform 0.2s',
-            pointerEvents: 'none',
-          }}
-          draggable={false}
-        />
-      </div>
-      <input
-        type="range"
-        min={1}
-        max={4}
-        step={0.01}
-        value={zoom}
-        onChange={handleZoomChange}
-        className="zoom-slider"
-        style={{ width: 200, marginTop: 16 }}
-      />
-      <div
-        style={{
-          fontSize: 15,
-          color: '#0d6efd',
-          fontWeight: 500,
-          marginTop: 4,
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          MozUserSelect: 'none',
-          msUserSelect: 'none',
-        }}
-      >
-        Zoom: {zoom.toFixed(2)}x
-      </div>
-    </div>
-  );
-}

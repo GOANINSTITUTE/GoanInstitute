@@ -1,31 +1,34 @@
 // AdminPanel.jsx
 import React, { useState, useEffect } from "react";
 import GalleryManager from "./GalleryManager";
-import ServicesManager from "./ServicesManager";
-import NewsManager from "./NewsManager";
 import HeroImagesManager from "./HeroImagesManager";
 import TestimonialsManager from "./TestimonialsManager";
 import AddAdminUser from "./AddAdminUser";
-import TeamManager from "./TeamManager";
-import DonationList from "./DonationList";
-import AboutManager from "./AboutManager";
 import { getAuth, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import ProfileModal from "./ProfileModal"; // <--- FIXED: import added
-import "./AdminPanel.css";
+import AnimatedHero from "../Components/AnimatedHero";
+import VisionImageManager from "./VisionImageManager";
+import ServiceManager from "./ServiceManager";
+import ImageManager from "./imageManager";
+import PrincipalTestimonialsManager from "./PrincipalsTestimonialsManager";
+import GICEProfileManager from "./GICEProfileManager";
+import GiceGalleryManager from "./GiceGalleryManager";
 const options = [
-  { key: "gallery", label: "Gallery Management", icon: "🖼️" },
-  { key: "services", label: "Services Management", icon: "🛠️" },
-  { key: "news", label: "News Management", icon: "📰" },
-  { key: "hero", label: "Hero Images", icon: "🌄" },
-  { key: "testimonials", label: "Testimonials", icon: "💬" },
-  { key: "addadmin", label: "Add Admin User", icon: "➕" },
-  { key: "team", label: "Team Management", icon: "👥" },
-  { key: "donations", label: "Donations", icon: "🎁" },
-  { key: "about", label: "About Management", icon: "ℹ️" }
+  { key: "gallery", label: "Image Management", icon: <i class="bi bi-images" aria-hidden="true"></i> },
+  { key: "gicegallery", label: "Gallery Management", icon: <i class="bi bi-card-image" aria-hidden="true"></i> },
+  { key: "hero", label: "Hero Section Image/Video", icon: <i class="bi bi-camera-video" aria-hidden="true"></i> },
+  { key: "testimonials", label: "Testimonials", icon: <i class="bi bi-chat-square-quote" aria-hidden="true"></i> },
+  { key: "Ptestimonial", label: "Principals Testimonials", icon: <i class="bi bi-person-badge"></i>  },
+  { key: "addadmin", label: "Add Admin User", icon: <i class="bi bi-person-plus" aria-hidden="true"></i> },
+  { key: "vision", label: "Vision Mission", icon: <i class="bi bi-eye" aria-hidden="true"></i> },
+  { key: "service", label: "Services", icon: <i class="bi bi-building" aria-hidden="true"></i> },
+  { key: "image", label: "Educational Services Management", icon: <i class="bi bi-mortarboard" aria-hidden="true"></i> },
+  { key: "giceprofile", label: "Profile Management", icon: <i class="bi bi-person" aria-hidden="true"></i> }
 ];
 
-const defaultAvatar = "/default-avatar.png";
+
+const defaultAvatar = "https://i.pinimg.com/originals/cd/ab/b1/cdabb1166392917d0af72e23fac2445e.png";
 
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState(null);
@@ -73,47 +76,56 @@ function AdminPanel() {
   };
 
   return (
-    <div className="container py-4" style={{ marginTop: 80 }}>
-      {/* Header */}
-      <div
-        className="d-flex justify-content-between align-items-center mb-4 sticky-top "
-       
-      >
-        <h2>Admin Dashboard</h2>
-        <div className="d-flex align-items-center">
-          <div
-            className="d-flex align-items-center me-3"
-            style={{ cursor: "pointer" }}
-            onClick={() => setShowProfileModal(true)}
-            title="Edit profile icon"
-          >
-            <img
-              src={profileImageUrl || defaultAvatar}
-              alt="Profile"
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                objectFit: "cover",
-                marginRight: 8,
-                border: "1.5px solid #bbb",
-              }}
-            />
-            <span style={{ fontWeight: "bold" }}>
-              {user
-                ? loadingName
-                  ? "Loading..."
-                  : errorName
-                  ? "Admin"
-                  : adminName || "Admin"
-                : "Admin"}
-            </span>
-          </div>
-          <button className="btn btn-danger" onClick={handleLogout} style={{ zIndex: 1200 }}>
-            Logout
-          </button>
-        </div>
-      </div>
+    <div >
+      <AnimatedHero
+  title="Admin Dashboard"
+  subtitle="Manage content, users, and settings"
+  className="admin-dashboard-hero"
+  overlayColor="rgba(14,77,109,0.15)"
+>
+  {/* Right-side controls */}
+  <div className="d-flex align-items-center justify-content-center flex-wrap gap-3 mt-3">
+    {/* Profile */}
+    <div
+      className="d-flex align-items-center"
+      style={{ cursor: "pointer" }}
+      onClick={() => setShowProfileModal(true)}
+      title="Edit profile"
+    >
+      <img
+        src={profileImageUrl || defaultAvatar}
+        alt="Profile"
+        style={{
+          width: 100,
+          height: 100,
+          borderRadius: "50%",
+          objectFit: "cover",
+          marginRight: 10,
+          border: "2px solid var(--text-accent)",
+        }}
+      />
+      <span style={{ fontWeight: "bold", color: "white" }}>
+        {user
+          ? loadingName
+            ? "Loading..."
+            : errorName
+            ? "Admin"
+            : adminName || "Admin"
+          : "Admin"}
+      </span>
+    </div>
+
+    {/* Logout button */}
+    <button
+      className="btn btn-danger"
+      onClick={handleLogout}
+      style={{ zIndex: 1200 }}
+    >
+      Logout
+    </button>
+  </div>
+</AnimatedHero>
+
 
       {/* Profile modal */}
       <ProfileModal
@@ -139,35 +151,37 @@ function AdminPanel() {
 
       {/* Options grid */}
       <div className="row g-4 mb-4">
-        {options.map((option) => (
-          <div className="col-12 col-sm-6 col-md-4" key={option.key}>
-            <div
-              className={`card h-100 shadow text-center p-4 option-card ${activeTab === option.key ? "border-primary" : ""}`}
-              style={{
-                cursor: "pointer",
-                transition: "transform 0.2s",
-                borderWidth: activeTab === option.key ? 2 : 1,
-              }}
-              onClick={() => setActiveTab(option.key)}
-            >
-              <div style={{ fontSize: 40 }}>{option.icon}</div>
-              <h5 className="mt-3">{option.label}</h5>
-            </div>
-          </div>
-        ))}
+  {options.map((option) => {
+    const isActive = activeTab === option.key;
+    return (
+      <div className="col-12 col-sm-6 col-md-4" key={option.key}>
+        <div
+          className={`card h-100 shadow text-center p-4 option-card ${
+            isActive ? "active-option" : ""
+          }`}
+          onClick={() => setActiveTab(option.key)}
+        >
+          <div style={{ fontSize: 40 }}>{option.icon}</div>
+          <h5 className="mt-3">{option.label}</h5>
+        </div>
       </div>
+    );
+  })}
+</div>
+
+
 
       {/* Render active tab */}
       {activeTab === "gallery" && <GalleryManager />}
-      {activeTab === "services" && <ServicesManager />}
-      {activeTab === "news" && <NewsManager />}
+      {activeTab === "gicegallery" && <GiceGalleryManager />}
       {activeTab === "hero" && <HeroImagesManager />}
       {activeTab === "testimonials" && <TestimonialsManager />}
+      {activeTab === "Ptestimonial" && <PrincipalTestimonialsManager />}
+      {activeTab === "giceprofile" && <GICEProfileManager />}
       {activeTab === "addadmin" && user && <AddAdminUser />}
-      {activeTab === "team" && <TeamManager />}
-      {activeTab === "about" && <AboutManager />}
-      {activeTab === "donations" && <DonationList />}
-
+      {activeTab === "service" && user && <ServiceManager />}
+      {activeTab === "vision" && <VisionImageManager />}
+      {activeTab === "image" && <ImageManager />}
       {!activeTab && (
         <div className="text-center text-muted mt-5">
           <h4>Select an option above to manage content.</h4>

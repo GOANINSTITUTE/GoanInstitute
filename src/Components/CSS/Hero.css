@@ -1,0 +1,42 @@
+
+
+
+/* Fade-in letters for main title */
+.hero-title {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 5.2s ease-out forwards;
+}
+
+/* Subtitle animation */
+.hero-subtitle {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeUp 5.6s ease-out forwards;
+}
+
+/* Mission & Vision card animation */
+.hero-card {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUpCards 5.2s ease-out forwards;
+}
+
+/* KEYFRAMES */
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(25px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUpCards {
+  0% { opacity: 0; transform: translateY(40px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Delay cards slightly for smooth stagger */
+.hero-card:nth-child(1) {
+  animation-delay: 2.0s;
+}
+.hero-card:nth-child(2) {
+  animation-delay: 2.3s;
+}

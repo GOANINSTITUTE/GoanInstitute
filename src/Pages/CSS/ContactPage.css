@@ -1,9 +1,31 @@
 .responsive-padding {
-  padding-top: 80px; /* Default for desktop */
+  padding-top: 80px; /* Desktop default */
 }
 
-@media (max-width: 767.98px) { /* Bootstrap's breakpoint for mobile */
+@media (max-width: 992px) {
   .responsive-padding {
-    padding-top: 30px; /* For mobile screens */
+    padding-top: 60px;
+  }
+}
+
+@media (max-width: 767.98px) { /* Bootstrap's mobile breakpoint */
+  .responsive-padding {
+    padding-top: 30px;
+  }
+
+  .contact-text {
+    font-size: 0.8rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 480px) {
+  .responsive-padding {
+    padding-top: 20px;
+  }
+
+  .contact-text {
+    font-size: 0.7rem;
   }
 }
