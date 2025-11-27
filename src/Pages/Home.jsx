@@ -556,6 +556,7 @@ function Home() {
                 View More Testimonials
               </Link>
             </div>
+            <h3 className="fw-bold mt-4 mb-4 text-dark">REVIEWS FROM GICE FAMILY MEMBERS</h3>
             <div className="row justify-content-center g-4 mt-3">
               {[
                 {
@@ -616,7 +617,7 @@ function Home() {
               ))}
             </div>
             <div className="mt-4">
-              <Link to="/GICEFamily" className="btn btn-secondary btn-lg">
+              <Link to="/GICEFamily" className="btn btn-accent btn-lg">
                 View More Reviews
               </Link>
             </div>
