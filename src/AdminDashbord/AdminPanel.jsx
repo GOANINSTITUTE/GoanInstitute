@@ -1,6 +1,5 @@
 // AdminPanel.jsx
 import React, { useState, useEffect } from "react";
-import GalleryManager from "./GalleryManager";
 import HeroImagesManager from "./HeroImagesManager";
 import TestimonialsManager from "./TestimonialsManager";
 import VideoTestimonialsManager from "./VideoTestimonialManager";
@@ -16,11 +15,10 @@ import PrincipalTestimonialsManager from "./PrincipalsTestimonialsManager";
 import GICEProfileManager from "./GICEProfileManager";
 import GiceGalleryManager from "./GiceGalleryManager";
 const options = [
-  { key: "gallery", label: "Image Management", icon: <i class="bi bi-images" aria-hidden="true"></i> },
   { key: "gicegallery", label: "Gallery Management", icon: <i class="bi bi-card-image" aria-hidden="true"></i> },
   { key: "hero", label: "Hero Section Image/Video", icon: <i class="bi bi-camera-video" aria-hidden="true"></i> },
   { key: "testimonials", label: "Testimonials", icon: <i class="bi bi-chat-square-quote" aria-hidden="true"></i> },
-  { key: "videotestimonials", label: "Video Testimonials", icon: <i class="bi bi-chat-square-quote" aria-hidden="true"></i> },
+  { key: "videotestimonials", label: "Video Testimonials", icon:<i class="bi bi-camera-video-fill" aria-hidden="true"></i> },
   { key: "Ptestimonial", label: "Principals Testimonials", icon: <i class="bi bi-person-badge"></i>  },
   { key: "addadmin", label: "Add Admin User", icon: <i class="bi bi-person-plus" aria-hidden="true"></i> },
   { key: "vision", label: "Vision Mission", icon: <i class="bi bi-eye" aria-hidden="true"></i> },
@@ -174,7 +172,7 @@ function AdminPanel() {
 
 
       {/* Render active tab */}
-      {activeTab === "gallery" && <GalleryManager />}
+
       {activeTab === "gicegallery" && <GiceGalleryManager />}
       {activeTab === "hero" && <HeroImagesManager />}
       {activeTab === "testimonials" && <TestimonialsManager />}
