@@ -495,6 +495,78 @@ table.table-bordered button.btn-secondary:hover {
 .top-hover:hover {
   color: var(--secondary) !important; /* or just 'text-secondary' color value */
 }
+/* =================================
+   INPUT BOX STYLING
+   ================================= */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--secondary);
+  background-color: var(--background);
+  color: var(--primary);
+  font-size: 15px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+/* Hover Effect */
+input:hover,
+select:hover {
+  border-color: var(--primary);
+}
+
+/* Focus Effect */
+input:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-opaced);
+}
+
+/* Placeholder Color */
+input::placeholder {
+  color: var(--secondary-light);
+  opacity: 0.8;
+}
+textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--secondary);
+  background-color: var(--background);
+  color: var(--primary);
+  resize: vertical;
+  min-height: 120px;
+  transition: all 0.25s ease;
+}
+
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-opaced);
+  outline: none;
+}
+
+textarea::placeholder {
+  color: var(--secondary-light);
+  opacity: 0.8;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 /* spacing */
 .testimonial-slider .slick-slide {

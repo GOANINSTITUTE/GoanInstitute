@@ -15,6 +15,7 @@ import {
   JournalBookmarkFill,
   MicFill,
 } from "react-bootstrap-icons";
+import VideoTestimonial from "./VideoTestimonial";
 
 // Department data for dynamic rendering
 const departments = [
@@ -246,11 +247,8 @@ const GICEFamily = () => {
         </div>
       </div>
     </section>
-
-
-        
       </div>
-
+<VideoTestimonial/>
       
 
 

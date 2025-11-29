@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Home from './Pages/Home.jsx';
 import AboutUs from './Pages/About.jsx';
 import Contact from './Pages/Contact.jsx';
-import Gallery from './Pages/Gallery.jsx';
 import AdminPanel from './AdminDashbord/AdminPanel.jsx';
 import Team from './Pages/Team.jsx';
 import TeamMemberDetails from './Pages/TeamMemberDetails.jsx';
@@ -71,7 +70,6 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/gallery" element={<Gallery />} />
               <Route path="/careers" element={<Careers />} />
               <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
               <Route path="/team" element={<Team />} />

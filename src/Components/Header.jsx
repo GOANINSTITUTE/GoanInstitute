@@ -133,19 +133,14 @@ const Header = () => {
 
 
         <div className="mx-auto d-flex align-items-center ">
-          {/* Desktop Links */}
-          <Link to="/gallery" className="me-3 cursor-pointer d-none d-md-inline text-light top-hover">
-  <i className="bi bi-images me-1"></i> Gallery
-</Link>
+         
 
 
 
 
           {/* Mobile Icons */}
           <div className="d-flex d-md-none gap-3">
-            <Link to="/GICEProfile" className="cursor-pointer text-light top-hover">
-              <i className="bi bi-images me-1"></i>
-            </Link>
+           
             
           </div>
         </div>
@@ -215,17 +210,21 @@ const Header = () => {
         </div>
 
         {/* Mobile Button */}
-        <button className="d-md-none btn btn-outline-dark border-0 mobile-menu-btn" onClick={toggleMobileMenu}>
-          <i className={`bi ${isMobileMenuOpen ? "bi-x" : "bi-list"}`} style={{ fontSize: "1.5rem" }}></i>
-        </button>
+<button
+  className={`d-md-none btn btn-outline-nav border-0 mobile-menu-btn ${
+    isMobileMenuOpen ? "open" : ""
+  }`}
+  onClick={toggleMobileMenu}
+>
+  <i className={`bi ${isMobileMenuOpen ? "bi-x" : "bi-list"}`} style={{ fontSize: "1.5rem" }}></i>
+</button>
+
       </div>
 
       {/* 🔹 Mobile Menu Overlay */}
       <div className={`mobile-menu-overlay ${isMobileMenuOpen ? "active" : ""}`} onClick={() => setIsMobileMenuOpen(false)} style={{zIndex:"99999999"}}>
         <div className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
           <div className="mobile-menu-header">
-            <img src="https://res.cloudinary.com/dcfpgz4x8/image/upload/v1762753746/cropped-Untitled-design-18_zgjahh.png" alt="Goan Institute Logo" style={{ height: "50px", width: "auto" }} />
-            <button className="btn-close" onClick={() => setIsMobileMenuOpen(false)}></button>
           </div>
           <div className="mobile-nav-items">
             {navItems.map((item, index) => (
@@ -363,6 +362,16 @@ const Header = () => {
           transition: transform 0.4s ease, width 0.4s ease;
           border-radius: 2px;
         }
+/* Before opening (default) */
+.mobile-menu-btn i {
+  color: white !important;
+
+}
+
+/* After opening */
+.mobile-menu-btn.open i {
+  color: black !important;
+}
 
         .mobile-menu-overlay {
           position: fixed;
