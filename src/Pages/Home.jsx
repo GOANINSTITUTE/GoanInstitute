@@ -617,7 +617,7 @@ function Home() {
               ))}
             </div>
             <div className="mt-4">
-              <Link to="/GICEFamily" className="btn btn-accent btn-lg">
+              <Link to="/GICEFamily" className="btn btn-outline btn-lg">
                 View More Reviews
               </Link>
             </div>

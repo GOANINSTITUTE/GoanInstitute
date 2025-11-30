@@ -175,78 +175,62 @@ const GICEFamily = () => {
 <TestimonialSlider type="student" />
 <TestimonialSlider type="officestaff" />
 <section
-      className="py-5"
-      style={{
-        backgroundColor: "var(--secondary-light-opaced, #5c443381)",
-        color: "#fff",
-        minHeight: "320px",
-      }}
-    >
-      <div className="container">
-        <div className="row align-items-center gy-4">
-          
-          {/* Video Left */}
-          <div className="col-md-6">
-            <div
-              style={{
-                position: "relative",
-                paddingBottom: "56.25%", // 16:9 ratio
-                height: 0,
-                overflow: "hidden",
-                borderRadius: 16,
-                boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
-              }}
-            >
-              <iframe
-                title="YouTube Video"
-                src="https://www.youtube.com/embed/_N-_xU0SxEc?si=aCC8sbrRgF4dQG8Y" // Replace with actual video ID
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: "100%",
-                  border: "none",
-                  borderRadius: 16,
-                }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
+  className="py-5"
+  style={{
+    backgroundColor: "var(--secondary-light-opaced, #5c443381)",
+    color: "#fff",
+    minHeight: "200px",
+    display: "flex",
+    alignItems: "center",
+  }}
+>
+  <div className="container">
+    <div className="row">
+      <div className="col-12">
 
-          {/* Content Right */}
-          <div className="col-md-6 text-center text-md-start">
-            <h1 style={{
-                    color: "var(--accent, #ffd700)",
-                    fontSize: "3rem",
-                    fontWeight: "900",
-                    lineHeight: 1,
-                  }}>TRUST</h1>
-                  <br/>
-            <h3
-              className=""
-              style={{
-                color: "var(--accent, #ffd700)",
-                fontWeight: "700",
-                fontSize: "2.4rem",
-                letterSpacing: "1px",
-              }}
-            >
-              Words from our
-            </h3>
-            <div
-              className="d-flex flex-column flex-sm-row justify-content-center justify-content-md-start gap-4"
-              style={{ fontWeight: 600, fontSize: "1.4rem" }}
-            >
-                <div>Faculty Member</div>
-              
-              
-            </div>
-          </div>
+        <div
+          className="d-flex flex-wrap justify-content-center align-items-center gap-3"
+        >
+          <h1
+            style={{
+              color: "var(--accent, #ffd700)",
+              fontSize: "3rem",
+              fontWeight: "900",
+              margin: 0,
+            }}
+          >
+            TRUST WORDS FROM OUR
+          </h1>
+
+          <h3
+            style={{
+              color: "var(--accent, #ffd700)",
+              fontWeight: 700,
+              fontSize: "2rem",
+              margin: 0,
+            }}
+          >
+            
+          </h3>
+
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: "1.6rem",
+              padding: "6px 14px",
+              background: "rgba(255,255,255,0.15)",
+              borderRadius: "6px",
+            }}
+          >
+            Faculty Members
+          </span>
         </div>
+
       </div>
-    </section>
+    </div>
+  </div>
+</section>
+
       </div>
 <VideoTestimonial/>
       

@@ -50,7 +50,7 @@ export default function VideoTestimonial() {
           <div
             key={video.id}
             style={{
-              background: "white",
+              background: "var(--secondary-light-opaced)",
               borderRadius: "12px",
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               overflow: "hidden",
@@ -84,6 +84,7 @@ export default function VideoTestimonial() {
             {/* Title */}
             <h4
               style={{
+                fontWeight: "600",
                 marginTop: "15px",
                 textAlign: "center",
                 fontSize: "18px",
