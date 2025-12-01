@@ -35,10 +35,6 @@ export default function VideoTestimonial() {
 
   return (
     <div style={{ padding: "40px", maxWidth: "1200px", margin: "0 auto" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "30px" }}>
-        Video Testimonials
-      </h2>
-
       <div
         style={{
           display: "grid",
