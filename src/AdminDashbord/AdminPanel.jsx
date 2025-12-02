@@ -174,7 +174,6 @@ function AdminPanel() {
       {/* Render active tab */}
 
       {activeTab === "gicegallery" && <GalleryManager />}
-
       {activeTab === "hero" && <HeroImagesManager />}
       {activeTab === "testimonials" && <TestimonialsManager />}
       {activeTab === "videotestimonials" && <VideoTestimonialsManager />}

@@ -72,7 +72,7 @@ const BenefitsSlider = ({ benefits = [] }) => {
     <section className="bs-section bg-light">
       <div className="">
 
-        <h2 className="bs-title text-dark">Benefits for Students</h2>
+        <h2 class="text-dark fw-bold text-center mb-3">BENEFITS FOR STUDENTS</h2>
         <p className="bs-sub">How students grow through this programme</p>
 
         <div className="bs-wrapper ">
@@ -132,13 +132,11 @@ const BenefitsSlider = ({ benefits = [] }) => {
           }
 
           .bs-card-title {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  white-space: normal;       /* text can wrap to next line */
-  text-align: center;
-}
-
-
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;       /* text can wrap to next line */
+            text-align: center;
+          }
           .bs-sub {
             text-align: center;
             color: #6c757d;

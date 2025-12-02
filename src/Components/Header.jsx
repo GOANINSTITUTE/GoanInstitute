@@ -222,7 +222,7 @@ const Header = () => {
       </div>
 
       {/* 🔹 Mobile Menu Overlay */}
-      <div className={`mobile-menu-overlay ${isMobileMenuOpen ? "active" : ""}`} onClick={() => setIsMobileMenuOpen(false)} style={{zIndex:"99999999"}}>
+      <div className={`mobile-menu-overlay ${isMobileMenuOpen ? "active" : ""}`} onClick={() => setIsMobileMenuOpen(false)} style={{zIndex:"99999999999999"}}>
         <div className="mobile-menu-content" onClick={(e) => e.stopPropagation()}>
           <div className="mobile-menu-header">
           </div>
