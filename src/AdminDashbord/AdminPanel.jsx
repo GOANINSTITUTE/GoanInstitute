@@ -13,7 +13,7 @@ import ServiceManager from "./ServiceManager";
 import ImageManager from "./imageManager";
 import PrincipalTestimonialsManager from "./PrincipalsTestimonialsManager";
 import GICEProfileManager from "./GICEProfileManager";
-import GiceGalleryManager from "./GiceGalleryManager";
+import GalleryManager from "./GalleryManager";
 const options = [
   { key: "gicegallery", label: "Gallery Management", icon: <i class="bi bi-card-image" aria-hidden="true"></i> },
   { key: "hero", label: "Hero Section Image/Video", icon: <i class="bi bi-camera-video" aria-hidden="true"></i> },
@@ -173,7 +173,8 @@ function AdminPanel() {
 
       {/* Render active tab */}
 
-      {activeTab === "gicegallery" && <GiceGalleryManager />}
+      {activeTab === "gicegallery" && <GalleryManager />}
+
       {activeTab === "hero" && <HeroImagesManager />}
       {activeTab === "testimonials" && <TestimonialsManager />}
       {activeTab === "videotestimonials" && <VideoTestimonialsManager />}
