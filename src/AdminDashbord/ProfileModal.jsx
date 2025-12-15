@@ -20,8 +20,8 @@ export default function ProfileModal({ show, onClose, currentImage, onUpdate, us
     }
     const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dgxhp09em",
-        uploadPreset: "unsigned_preset",
+        cloudName: "dqjcejidw",
+  uploadPreset: "goanins",
         multiple: false,
         cropping: false,
         folder: "adminProfileIcons",

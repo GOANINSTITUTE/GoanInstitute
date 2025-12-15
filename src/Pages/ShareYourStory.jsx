@@ -83,8 +83,8 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
     setUploading(true);
     const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dgxhp09em",
-        uploadPreset: "unsigned_preset",
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
       },
       (error, result) => {
         setUploading(false);

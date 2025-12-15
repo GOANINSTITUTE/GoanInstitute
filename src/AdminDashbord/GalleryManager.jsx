@@ -144,6 +144,7 @@ function GalleryManager() {
     type: "success",
   });
   const [editingItemId, setEditingItemId] = useState(null);
+  const [updatingImageId, setUpdatingImageId] = useState(null);
   const headingRef = useRef(null);
 
   useEffect(() => {
@@ -196,8 +197,8 @@ function GalleryManager() {
 
     const myWidget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dgxhp09em",
-        uploadPreset: "unsigned_preset",
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
       },
       async (error, result) => {
         if (!error && result && result.event === "success") {
@@ -221,6 +222,43 @@ function GalleryManager() {
         } else if (error) {
           console.error("Cloudinary upload error:", error);
           showNotification("Upload failed, please try again!", "error");
+        }
+      }
+    );
+    myWidget.open();
+  };
+
+  // New function to update image only
+  const handleUpdateImage = (itemId) => {
+    setUpdatingImageId(itemId);
+    
+    const myWidget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
+      },
+      async (error, result) => {
+        if (!error && result && result.event === "success") {
+          try {
+            const itemRef = doc(db, "gallery", itemId);
+            await updateDoc(itemRef, {
+              imageUrl: result.info.secure_url,
+              updatedAt: serverTimestamp(),
+            });
+            showNotification("Image updated successfully!", "success");
+            fetchItems();
+          } catch (error) {
+            console.error("Error updating image:", error);
+            showNotification("Failed to update image!", "error");
+          } finally {
+            setUpdatingImageId(null);
+          }
+        } else if (error) {
+          console.error("Cloudinary upload error:", error);
+          showNotification("Image update failed!", "error");
+          setUpdatingImageId(null);
+        } else if (result && result.event === "close") {
+          setUpdatingImageId(null);
         }
       }
     );
@@ -323,6 +361,13 @@ function GalleryManager() {
                   alt={item.title || "Untitled"}
                   style={{ maxHeight: "250px", objectFit: "cover" }}
                 />
+                {updatingImageId === item.id && (
+                  <div className="card-img-overlay d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
+                    <div className="spinner-border text-light" role="status">
+                      <span className="visually-hidden">Updating image...</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="card-body">
                   <h5 className="card-title">{item.title || "Untitled"}</h5>
@@ -343,16 +388,34 @@ function GalleryManager() {
                       <span className="text-muted small">No category</span>
                     )}
                   </div>
-                  <div className="d-flex justify-content-between">
-                    <button
-                      className="btn btn-warning btn-sm"
-                      onClick={() => handleEdit(item)}
-                    >
-                      Edit
-                    </button>
+                  <div className="d-flex flex-wrap justify-content-between gap-2">
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-warning btn-sm"
+                        onClick={() => handleEdit(item)}
+                        disabled={updatingImageId === item.id}
+                      >
+                        Edit Details
+                      </button>
+                      <button
+                        className="btn btn-info btn-sm"
+                        onClick={() => handleUpdateImage(item.id)}
+                        disabled={updatingImageId === item.id}
+                      >
+                        {updatingImageId === item.id ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-1"></span>
+                            Updating...
+                          </>
+                        ) : (
+                          "Update Image"
+                        )}
+                      </button>
+                    </div>
                     <button
                       className="btn btn-danger btn-sm"
                       onClick={() => handleDelete(item.id)}
+                      disabled={updatingImageId === item.id}
                     >
                       Delete
                     </button>

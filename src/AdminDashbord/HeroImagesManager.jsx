@@ -5,6 +5,7 @@ import {
   addDoc,
   getDocs,
   deleteDoc,
+  updateDoc,
   doc,
 } from "firebase/firestore";
 
@@ -15,7 +16,7 @@ function HeroMediaManager() {
     fetchItems();
   }, []);
 
-  // 🔹 Fetch all hero background media
+  // 🔹 Fetch hero media
   const fetchItems = async () => {
     try {
       const snapshot = await getDocs(collection(db, "hero-backgrounds"));
@@ -25,82 +26,78 @@ function HeroMediaManager() {
       }));
       setItems(data);
     } catch (error) {
-      console.error("❌ Error fetching hero media:", error);
+      console.error("Error fetching media:", error);
     }
   };
 
-  // 🔹 Upload new hero background (image or video)
+  // 🔹 Upload new media
   const handleUpload = () => {
-    const myWidget = window.cloudinary.createUploadWidget(
+    const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dgxhp09em",
-        uploadPreset: "unsigned_preset",
-        sources: ["local", "url", "camera"],
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
+        resourceType: "auto",
         multiple: false,
-        maxFileSize: 50000000, // 50MB
-        resourceType: "auto", // <--- allows both image and video
       },
       async (error, result) => {
-        if (!error && result && result.event === "success") {
-          try {
-            const newUrl = result.info.secure_url;
-            const mediaType = result.info.resource_type; // "image" or "video"
-            await addDoc(collection(db, "hero-backgrounds"), {
-              url: newUrl,
-              type: mediaType,
-              uploadedAt: new Date(),
-            });
-            alert("✅ Media added successfully!");
-            fetchItems();
-          } catch (err) {
-            console.error("🔥 Firestore error:", err);
-            alert("Failed to save media. Check console for details.");
-          }
-        } else if (error) {
-          console.error("❌ Cloudinary upload error:", error);
+        if (!error && result?.event === "success") {
+          await addDoc(collection(db, "hero-backgrounds"), {
+            url: result.info.secure_url,
+            type: result.info.resource_type,
+            uploadedAt: new Date(),
+          });
+          alert("Media added!");
+          fetchItems();
         }
       }
     );
-    myWidget.open();
+    widget.open();
   };
 
-  // 🔹 Delete hero media
+  // 🔹 UPDATE media
+  const handleUpdate = (id) => {
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
+        resourceType: "auto",
+        multiple: false,
+      },
+      async (error, result) => {
+        if (!error && result?.event === "success") {
+          await updateDoc(doc(db, "hero-backgrounds", id), {
+            url: result.info.secure_url,
+            type: result.info.resource_type,
+            updatedAt: new Date(),
+          });
+          alert("Media updated!");
+          fetchItems();
+        }
+      }
+    );
+    widget.open();
+  };
+
+  // 🔹 Delete media
   const handleDelete = async (id) => {
-    try {
-      await deleteDoc(doc(db, "hero-backgrounds", id));
-      fetchItems();
-      alert("🗑️ Media deleted!");
-    } catch (error) {
-      console.error("❌ Error deleting hero media:", error);
-    }
+    await deleteDoc(doc(db, "hero-backgrounds", id));
+    alert("Media deleted!");
+    fetchItems();
   };
 
   return (
     <div className="container mt-4">
-      <h3 className="mb-3 fw-bold text-primary">Hero Background Media</h3>
+      <h3 className="fw-bold text-primary mb-3">Hero Background Media</h3>
 
-      {/* Upload button */}
-      <button
-        className="btn btn-success mb-4 px-4 py-2"
-        style={{ borderRadius: "10px" }}
-        onClick={handleUpload}
-      >
-        <i className="bi bi-cloud-upload me-2"></i> Upload Image / Video
+      <button className="btn btn-success mb-4" onClick={handleUpload}>
+        Upload Image / Video
       </button>
 
-      {/* Media Grid */}
       <div className="row">
         {items.length > 0 ? (
           items.map((item) => (
             <div key={item.id} className="col-md-4 col-lg-3 mb-4">
-              <div
-                className="card shadow-sm border-0"
-                style={{
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                  backgroundColor: "#f8f9fa",
-                }}
-              >
+              <div className="card shadow-sm border-0">
                 {item.type === "video" ? (
                   <video
                     src={item.url}
@@ -112,25 +109,31 @@ function HeroMediaManager() {
                   <img
                     src={item.url}
                     className="card-img-top"
-                    alt="Hero Background"
+                    alt="Hero"
                     style={{ height: "180px", objectFit: "cover" }}
                   />
                 )}
-                <div className="card-body text-center">
+
+                <div className="card-body d-flex justify-content-between">
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => handleUpdate(item.id)}
+                  >
+                    Update
+                  </button>
+
                   <button
                     className="btn btn-outline-danger btn-sm"
                     onClick={() => handleDelete(item.id)}
                   >
-                    <i className="bi bi-trash me-1"></i> Delete
+                    Delete
                   </button>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="text-muted text-center mt-4">
-            <p>No media added yet. Upload some!</p>
-          </div>
+          <p className="text-center text-muted">No media added yet</p>
         )}
       </div>
     </div>

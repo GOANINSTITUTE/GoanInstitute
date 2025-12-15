@@ -76,8 +76,8 @@ function VisionImageManager() {
   const handleUpload = async () => {
     const myWidget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dgxhp09em",
-        uploadPreset: "unsigned_preset",
+        cloudName: "dqjcejidw",
+  uploadPreset: "goanins",
       },
       async (error, result) => {
         if (!error && result && result.event === "success") {

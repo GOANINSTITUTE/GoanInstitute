@@ -85,8 +85,8 @@ export default function GiceGalleryManager() {
     // New Upload (Image + Title)
     const widget = window.cloudinary.createUploadWidget(
       {
-        cloudName: "dgxhp09em",
-        uploadPreset: "unsigned_preset",
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
       },
       async (error, result) => {
         if (!error && result && result.event === "success") {

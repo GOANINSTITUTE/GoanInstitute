@@ -56,6 +56,7 @@ function ImageManager() {
   const [items, setItems] = useState([]);
   const [notification, setNotification] = useState({ message: "", type: "success" });
   const [editingId, setEditingId] = useState(null);
+  const [updatingImageId, setUpdatingImageId] = useState(null);
 
   const headingRef = useRef(null);
 
@@ -76,6 +77,46 @@ function ImageManager() {
     } catch (error) {
       console.error("Error fetching images:", error);
     }
+  };
+
+  // Function to update only the image
+  const handleUpdateImage = async (itemId) => {
+    if (!itemId) return;
+    
+    setUpdatingImageId(itemId);
+    
+    const myWidget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: "dqjcejidw",
+        uploadPreset: "goanins",
+      },
+      async (error, result) => {
+        if (!error && result && result.event === "success") {
+          try {
+            const ref = doc(db, "competenceImages", itemId);
+            await updateDoc(ref, {
+              imageUrl: result.info.secure_url,
+              updatedAt: serverTimestamp(),
+            });
+            
+            showNotification("Image updated successfully!", "success");
+            fetchItems(); // Refresh the list
+          } catch (err) {
+            console.error("Firestore error:", err);
+            showNotification("Failed to update image!", "error");
+          } finally {
+            setUpdatingImageId(null);
+          }
+        } else if (error) {
+          console.error("Cloudinary error:", error);
+          showNotification("Upload failed!", "error");
+          setUpdatingImageId(null);
+        } else if (result && result.event === "close") {
+          setUpdatingImageId(null);
+        }
+      }
+    );
+    myWidget.open();
   };
 
   // Editing text/type only
@@ -108,7 +149,7 @@ function ImageManager() {
     }
   };
 
-  // Upload or update image (with Cloudinary)
+  // Upload or update image (with Cloudinary) - for new items or full updates
   const handleUpload = async () => {
     if (!type) {
       showNotification("Please select image type!", "error");
@@ -198,6 +239,7 @@ function ImageManager() {
     setTitle("");
     setDesc("");
     setImageUrl("");
+    setLink("");
     setEditingId(null);
   };
 
@@ -239,7 +281,6 @@ function ImageManager() {
               onChange={(e) => setDesc(e.target.value)}
               className="form-control mb-2"
             />
-
             <input
               type="text"
               placeholder="Redirect Link (ex: /services/regular-skill-development)"
@@ -247,25 +288,43 @@ function ImageManager() {
               onChange={(e) => setLink(e.target.value)}
               className="form-control mb-2"
             />
-
           </>
         )}
 
         {editingId ? (
           <>
-            <button className="btn btn-primary me-2" onClick={handleSaveEdit}>
-              Save Changes
+            <button 
+              className="btn btn-primary me-2" 
+              onClick={handleSaveEdit}
+              disabled={updatingImageId === editingId}
+            >
+              Save Text Changes
             </button>
-            <button className="btn btn-success me-2" onClick={handleUpload}>
-              Change Image
+            <button 
+              className="btn btn-info me-2" 
+              onClick={() => handleUpdateImage(editingId)}
+              disabled={updatingImageId === editingId}
+            >
+              {updatingImageId === editingId ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-1"></span>
+                  Updating Image...
+                </>
+              ) : (
+                "Update Image Only"
+              )}
             </button>
-            <button className="btn btn-secondary" onClick={resetFields}>
+            <button 
+              className="btn btn-secondary" 
+              onClick={resetFields}
+              disabled={updatingImageId === editingId}
+            >
               Cancel Edit
             </button>
           </>
         ) : (
           <button className="btn btn-success" onClick={handleUpload}>
-            Upload Image
+            Upload New Image
           </button>
         )}
       </div>
@@ -276,12 +335,21 @@ function ImageManager() {
           items.map((item) => (
             <div key={item.id} className="col-md-6 col-lg-4 mb-3">
               <div className="card shadow-sm border-0">
-                <img
-                  src={item.imageUrl}
-                  alt={item.title}
-                  className="card-img-top"
-                  style={{ maxHeight: "250px", objectFit: "cover" }}
-                />
+                <div className="position-relative">
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="card-img-top"
+                    style={{ maxHeight: "250px", objectFit: "cover" }}
+                  />
+                  {updatingImageId === item.id && (
+                    <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
+                      <div className="spinner-border text-light" role="status">
+                        <span className="visually-hidden">Updating image...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <div className="card-body">
                   <h6 className="text-uppercase text-secondary">
                     {item.type === "background" ? "Background Image" : "Educational Services Image"}
@@ -290,11 +358,33 @@ function ImageManager() {
                   {item.desc && <p className="small mb-2">{item.desc}</p>}
                   {item.link && <p className="small mb-2 text-primary">{item.link}</p>}
 
-                  <div className="d-flex justify-content-between">
-                    <button className="btn btn-warning btn-sm" onClick={() => handleEdit(item)}>
-                      Edit
+                  <div className="d-flex flex-wrap justify-content-between gap-2">
+                    <button 
+                      className="btn btn-warning btn-sm" 
+                      onClick={() => handleEdit(item)}
+                      disabled={updatingImageId === item.id}
+                    >
+                      Edit Details
                     </button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(item.id)}>
+                    <button 
+                      className="btn btn-info btn-sm" 
+                      onClick={() => handleUpdateImage(item.id)}
+                      disabled={updatingImageId === item.id}
+                    >
+                      {updatingImageId === item.id ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-1"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        "Update Image"
+                      )}
+                    </button>
+                    <button 
+                      className="btn btn-danger btn-sm" 
+                      onClick={() => handleDelete(item.id)}
+                      disabled={updatingImageId === item.id}
+                    >
                       Delete
                     </button>
                   </div>
