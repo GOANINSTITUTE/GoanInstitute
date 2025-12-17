@@ -9,6 +9,8 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import GoogleDriveImage from "./GoogleDriveImage";
+
 
 function Notification({ message, type, onClose }) {
   if (!message) return null;
@@ -47,27 +49,39 @@ function Notification({ message, type, onClose }) {
   );
 }
 
+
 function ImageManager() {
   const [type, setType] = useState(""); // 'background' or 'competence'
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [link, setLink] = useState("");
+  const [imageSource, setImageSource] = useState("cloudinary"); // 'cloudinary' or 'url' (Google Drive)
+
+  // For editing images separately
+  const [editingImageUrl, setEditingImageUrl] = useState("");
+  const [editingImageSource, setEditingImageSource] = useState("cloudinary");
+  const [isUpdatingImage, setIsUpdatingImage] = useState(false);
+
   const [items, setItems] = useState([]);
   const [notification, setNotification] = useState({ message: "", type: "success" });
   const [editingId, setEditingId] = useState(null);
   const [updatingImageId, setUpdatingImageId] = useState(null);
 
+
   const headingRef = useRef(null);
+
 
   useEffect(() => {
     fetchItems();
   }, []);
 
+
   const showNotification = (message, type = "success") => {
     setNotification({ message, type });
     setTimeout(() => setNotification({ message: "", type }), 2500);
   };
+
 
   const fetchItems = async () => {
     try {
@@ -79,45 +93,104 @@ function ImageManager() {
     }
   };
 
-  // Function to update only the image
-  const handleUpdateImage = async (itemId) => {
-    if (!itemId) return;
-    
-    setUpdatingImageId(itemId);
-    
-    const myWidget = window.cloudinary.createUploadWidget(
-      {
-        cloudName: "dqjcejidw",
-        uploadPreset: "goanins",
-      },
-      async (error, result) => {
-        if (!error && result && result.event === "success") {
-          try {
-            const ref = doc(db, "competenceImages", itemId);
-            await updateDoc(ref, {
-              imageUrl: result.info.secure_url,
-              updatedAt: serverTimestamp(),
-            });
-            
-            showNotification("Image updated successfully!", "success");
-            fetchItems(); // Refresh the list
-          } catch (err) {
-            console.error("Firestore error:", err);
-            showNotification("Failed to update image!", "error");
-          } finally {
-            setUpdatingImageId(null);
+
+  // NEW: Promise-based Cloudinary widget for edit mode
+  const openCloudinaryWidget = () => {
+    return new Promise((resolve, reject) => {
+      try {
+        const widget = window.cloudinary.createUploadWidget(
+          {
+            cloudName: "dqjcejidw",
+            uploadPreset: "goanins",
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            if (result?.event === "success") return resolve({ uploaded: true, url: result.info.secure_url });
+            if (result?.event === "close") return resolve({ uploaded: false });
           }
-        } else if (error) {
-          console.error("Cloudinary error:", error);
-          showNotification("Upload failed!", "error");
-          setUpdatingImageId(null);
-        } else if (result && result.event === "close") {
-          setUpdatingImageId(null);
+        );
+        widget.open();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+
+  // NEW: Handle image update while in edit mode (supports both Cloudinary and Google Drive)
+  const handleUpdateImageInEdit = async () => {
+    if (!editingId) return;
+
+    setIsUpdatingImage(true);
+
+    try {
+      let finalImageUrl = editingImageUrl;
+
+      // If using Cloudinary, open widget
+      if (editingImageSource === "cloudinary") {
+        const result = await openCloudinaryWidget();
+        if (!result.uploaded) {
+          showNotification("Upload cancelled or failed", "error");
+          setIsUpdatingImage(false);
+          return;
+        }
+        finalImageUrl = result.url;
+      } else {
+        // Using Google Drive URL
+        if (!editingImageUrl) {
+          showNotification("Please provide a Google Drive image URL", "error");
+          setIsUpdatingImage(false);
+          return;
         }
       }
-    );
-    myWidget.open();
+
+      // Update ONLY the imageUrl
+      const ref = doc(db, "competenceImages", editingId);
+      await updateDoc(ref, {
+        imageUrl: finalImageUrl,
+        updatedAt: serverTimestamp(),
+      });
+
+      showNotification("Image updated successfully!", "success");
+      setEditingImageUrl("");
+      setEditingImageSource("cloudinary");
+      fetchItems();
+    } catch (err) {
+      console.error("Error updating image:", err);
+      showNotification("Failed to update image!", "error");
+    } finally {
+      setIsUpdatingImage(false);
+    }
   };
+
+
+  // Function to update only the image (from item buttons)
+  const handleUpdateImage = async (itemId) => {
+    if (!itemId) return;
+
+    setUpdatingImageId(itemId);
+
+    try {
+      const result = await openCloudinaryWidget();
+
+      if (result.uploaded) {
+        const ref = doc(db, "competenceImages", itemId);
+        await updateDoc(ref, {
+          imageUrl: result.url,
+          updatedAt: serverTimestamp(),
+        });
+
+        showNotification("Image updated successfully!", "success");
+        fetchItems(); // Refresh the list
+      }
+    } catch (err) {
+      console.error("Error updating image:", err);
+      showNotification("Failed to update image!", "error");
+    } finally {
+      setUpdatingImageId(null);
+    }
+  };
+
 
   // Editing text/type only
   const handleSaveEdit = async () => {
@@ -149,7 +222,46 @@ function ImageManager() {
     }
   };
 
-  // Upload or update image (with Cloudinary) - for new items or full updates
+
+  const saveToFirestore = async (finalImageUrl) => {
+    try {
+      if (editingId) {
+        // Update existing document
+        const ref = doc(db, "competenceImages", editingId);
+        await updateDoc(ref, {
+          type,
+          title,
+          desc,
+          link,
+          imageUrl: finalImageUrl,
+          updatedAt: serverTimestamp(),
+        });
+
+        showNotification("Image updated successfully!", "success");
+        setEditingId(null);
+      } else {
+        // Add new document
+        await addDoc(collection(db, "competenceImages"), {
+          type,
+          title,
+          desc,
+          link,
+          imageUrl: finalImageUrl,
+          createdAt: serverTimestamp(),
+        });
+
+        showNotification("Image uploaded successfully!", "success");
+      }
+      resetFields();
+      fetchItems();
+    } catch (err) {
+      console.error("Firestore error:", err);
+      showNotification("Failed to save image!", "error");
+    }
+  };
+
+
+  // Upload or update image
   const handleUpload = async () => {
     if (!type) {
       showNotification("Please select image type!", "error");
@@ -160,6 +272,17 @@ function ImageManager() {
       return;
     }
 
+    // 🔹 GOOGLE DRIVE (URL)
+    if (imageSource === "url") {
+      if (!imageUrl) {
+        showNotification("Please provide a valid Google Drive image", "error");
+        return;
+      }
+      await saveToFirestore(imageUrl);
+      return;
+    }
+
+    // 🔹 CLOUDINARY
     const myWidget = window.cloudinary.createUploadWidget(
       {
         cloudName: "dgxhp09em",
@@ -167,40 +290,7 @@ function ImageManager() {
       },
       async (error, result) => {
         if (!error && result && result.event === "success") {
-          try {
-            if (editingId) {
-              // Update existing document with new image
-              const ref = doc(db, "competenceImages", editingId);
-              await updateDoc(ref, {
-                type,
-                title,
-                desc,
-                link,
-                imageUrl: result.info.secure_url,
-                updatedAt: serverTimestamp(),
-              });
-
-              showNotification("Image updated successfully!", "success");
-              setEditingId(null);
-            } else {
-              // Add new document
-              await addDoc(collection(db, "competenceImages"), {
-                type,
-                title,
-                desc,
-                link,
-                imageUrl: result.info.secure_url,
-                createdAt: serverTimestamp(),
-              });
-
-              showNotification("Image uploaded successfully!", "success");
-            }
-            resetFields();
-            fetchItems();
-          } catch (err) {
-            console.error("Firestore error:", err);
-            showNotification("Failed to save image!", "error");
-          }
+          await saveToFirestore(result.info.secure_url);
         } else if (error) {
           console.error("Cloudinary error:", error);
           showNotification("Upload failed!", "error");
@@ -209,6 +299,7 @@ function ImageManager() {
     );
     myWidget.open();
   };
+
 
   const handleDelete = async (id) => {
     try {
@@ -221,6 +312,7 @@ function ImageManager() {
     }
   };
 
+
   const handleEdit = (item) => {
     setEditingId(item.id);
     setType(item.type);
@@ -228,11 +320,18 @@ function ImageManager() {
     setDesc(item.desc || "");
     setImageUrl(item.imageUrl || "");
     setLink(item.link || "");
+    setImageSource("cloudinary");
+
+    // Initialize editing image fields
+    setEditingImageUrl("");
+    setEditingImageSource("cloudinary");
+
     if (headingRef.current) {
       const y = headingRef.current.getBoundingClientRect().top + window.pageYOffset - 200;
       window.scrollTo({ top: y, behavior: "smooth" });
     }
   };
+
 
   const resetFields = () => {
     setType("");
@@ -240,8 +339,12 @@ function ImageManager() {
     setDesc("");
     setImageUrl("");
     setLink("");
+    setImageSource("cloudinary");
     setEditingId(null);
+    setEditingImageUrl("");
+    setEditingImageSource("cloudinary");
   };
+
 
   return (
     <div className="container mt-4" ref={headingRef}>
@@ -251,7 +354,9 @@ function ImageManager() {
         onClose={() => setNotification({ message: "", type: notification.type })}
       />
 
+
       <h3 className="mb-3">Educational Services Image Manager</h3>
+
 
       {/* Form Section */}
       <div className="mb-3">
@@ -264,6 +369,7 @@ function ImageManager() {
           <option value="background">Background</option>
           <option value="competence">Image</option>
         </select>
+
 
         {type === "competence" && (
           <>
@@ -291,33 +397,41 @@ function ImageManager() {
           </>
         )}
 
+
+        {/* 🔹 Choose Image Source - NOW ALWAYS VISIBLE */}
+        <select
+          className="form-select mb-2"
+          value={imageSource}
+          onChange={(e) => setImageSource(e.target.value)}
+        >
+          <option value="cloudinary">Use Cloudinary Upload</option>
+          <option value="url">Use Google Drive Image</option>
+        </select>
+
+
+        {/* 🔹 Google Drive Component - NOW VISIBLE WHEN NOT EDITING */}
+        {imageSource === "url" && !editingId && (
+          <GoogleDriveImage onImageReady={(url) => setImageUrl(url)} />
+        )}
+
+        {imageUrl && !editingId && (
+          <img src={imageUrl} style={{ width: 160, borderRadius: 8, marginTop: 8, marginBottom: 8 }} alt="Preview" />
+        )}
+
+
         {editingId ? (
           <>
-            <button 
-              className="btn btn-primary me-2" 
+            <button
+              className="btn btn-primary me-2"
               onClick={handleSaveEdit}
-              disabled={updatingImageId === editingId}
+              disabled={isUpdatingImage}
             >
               Save Text Changes
             </button>
-            <button 
-              className="btn btn-info me-2" 
-              onClick={() => handleUpdateImage(editingId)}
-              disabled={updatingImageId === editingId}
-            >
-              {updatingImageId === editingId ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-1"></span>
-                  Updating Image...
-                </>
-              ) : (
-                "Update Image Only"
-              )}
-            </button>
-            <button 
-              className="btn btn-secondary" 
+            <button
+              className="btn btn-secondary"
               onClick={resetFields}
-              disabled={updatingImageId === editingId}
+              disabled={isUpdatingImage}
             >
               Cancel Edit
             </button>
@@ -328,6 +442,48 @@ function ImageManager() {
           </button>
         )}
       </div>
+
+
+      {/* EDIT MODE: Show separate image update section */}
+      {editingId && (
+        <div className="card p-3 mb-4 border-warning">
+          <h6 className="mb-3">Change Image for this item</h6>
+
+          <select
+            className="form-select mb-2"
+            value={editingImageSource}
+            onChange={(e) => setEditingImageSource(e.target.value)}
+          >
+            <option value="cloudinary">Upload from Cloudinary</option>
+            <option value="url">Use Google Drive Image</option>
+          </select>
+
+          {/* Google Drive URL input for editing */}
+          {editingImageSource === "url" && (
+            <GoogleDriveImage onImageReady={(url) => setEditingImageUrl(url)} />
+          )}
+
+          {editingImageUrl && editingImageSource === "url" && (
+            <img src={editingImageUrl} style={{ width: 160, borderRadius: 8, marginTop: 8, marginBottom: 8 }} alt="Preview" />
+          )}
+
+          <button
+            className="btn btn-warning btn-sm"
+            onClick={handleUpdateImageInEdit}
+            disabled={isUpdatingImage}
+          >
+            {isUpdatingImage ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-1"></span>
+                Updating...
+              </>
+            ) : (
+              "Update Image"
+            )}
+          </button>
+        </div>
+      )}
+
 
       {/* Display Section */}
       <div className="row mt-4">
@@ -341,6 +497,9 @@ function ImageManager() {
                     alt={item.title}
                     className="card-img-top"
                     style={{ maxHeight: "250px", objectFit: "cover" }}
+                    onError={(e) => {
+                      e.target.src = "https://via.placeholder.com/400x300?text=Image+Unavailable";
+                    }}
                   />
                   {updatingImageId === item.id && (
                     <div className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
@@ -358,16 +517,17 @@ function ImageManager() {
                   {item.desc && <p className="small mb-2">{item.desc}</p>}
                   {item.link && <p className="small mb-2 text-primary">{item.link}</p>}
 
+
                   <div className="d-flex flex-wrap justify-content-between gap-2">
-                    <button 
-                      className="btn btn-warning btn-sm" 
+                    <button
+                      className="btn btn-warning btn-sm"
                       onClick={() => handleEdit(item)}
                       disabled={updatingImageId === item.id}
                     >
-                      Edit Details
+                      Edit
                     </button>
-                    <button 
-                      className="btn btn-info btn-sm" 
+                    <button
+                      className="btn btn-info btn-sm"
                       onClick={() => handleUpdateImage(item.id)}
                       disabled={updatingImageId === item.id}
                     >
@@ -380,8 +540,8 @@ function ImageManager() {
                         "Update Image"
                       )}
                     </button>
-                    <button 
-                      className="btn btn-danger btn-sm" 
+                    <button
+                      className="btn btn-danger btn-sm"
                       onClick={() => handleDelete(item.id)}
                       disabled={updatingImageId === item.id}
                     >
@@ -399,5 +559,6 @@ function ImageManager() {
     </div>
   );
 }
+
 
 export default ImageManager;

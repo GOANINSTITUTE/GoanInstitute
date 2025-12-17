@@ -7,6 +7,7 @@ import {
   doc,
   serverTimestamp,
 } from "firebase/firestore";
+import GoogleDriveImage from "../AdminDashbord/GoogleDriveImage";
 
 // 🔹 Default Profile Icons
 const PROFILE_ICONS = {
@@ -33,6 +34,8 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
   });
 
   const [showImageDialog, setShowImageDialog] = useState(null);
+  const [uploadSource, setUploadSource] = useState("cloudinary"); // "cloudinary" or "drive"
+  const [driveImageUrl, setDriveImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -49,6 +52,11 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
         imageUrl: editData.imageUrl || "",
         type: editData.type || "student",
       });
+      // Set upload source based on existing image
+      if (editData.imageUrl && editData.imageUrl.includes("lh3.googleusercontent.com")) {
+        setUploadSource("drive");
+        setDriveImageUrl(editData.imageUrl);
+      }
     } else {
       setForm({
         name: "",
@@ -59,6 +67,8 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
         imageUrl: "",
         type: "student",
       });
+      setDriveImageUrl("");
+      setUploadSource("cloudinary");
       setDone(false);
     }
   }, [editData]);
@@ -67,7 +77,7 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
   const handleProfilePrompt = () => setShowImageDialog("ask");
 
   const handleProfileChoice = (response) => {
-    setShowImageDialog(response === "yes" ? "upload" : "choose-gender");
+    setShowImageDialog(response === "yes" ? "upload-method" : "choose-gender");
   };
 
   const handleGenderSelect = (key) => {
@@ -79,7 +89,11 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
     setShowImageDialog(null);
   };
 
-  const handleUploadImg = () => {
+  const handleDriveImageReady = (convertedUrl) => {
+    setDriveImageUrl(convertedUrl);
+  };
+
+  const uploadViaCloudinary = () => {
     setUploading(true);
     const widget = window.cloudinary.createUploadWidget(
       {
@@ -93,12 +107,28 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
             ...f,
             imageUrl: result.info.secure_url,
             gender: "",
+            source: "cloudinary",
           }));
           setShowImageDialog(null);
         }
       }
     );
     widget.open();
+  };
+
+  const uploadViaGoogleDrive = () => {
+    if (!driveImageUrl) {
+      alert("Please provide a valid Google Drive link first");
+      return;
+    }
+    
+    setForm((f) => ({
+      ...f,
+      imageUrl: driveImageUrl,
+      gender: "",
+      source: "google-drive",
+    }));
+    setShowImageDialog(null);
   };
 
   const setStarValue = (val) => setForm((f) => ({ ...f, stars: val }));
@@ -111,6 +141,20 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
 
     setSubmitting(true);
     try {
+      // Determine image source
+      let finalImageUrl = form.imageUrl;
+      let sourceType = "default";
+      
+      if (form.imageUrl === PROFILE_ICONS.male || 
+          form.imageUrl === PROFILE_ICONS.female || 
+          form.imageUrl === PROFILE_ICONS.other) {
+        sourceType = "default-icon";
+      } else if (form.imageUrl && form.imageUrl.includes("lh3.googleusercontent.com")) {
+        sourceType = "google-drive";
+      } else if (form.imageUrl && form.imageUrl.includes("cloudinary.com")) {
+        sourceType = "cloudinary";
+      }
+
       if (editData?.id) {
         // ✏️ Update existing testimonial
         await updateDoc(doc(db, "testimonials", editData.id), {
@@ -119,8 +163,9 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
           text: form.text.trim(),
           stars: form.stars,
           gender: form.gender,
-          imageUrl: form.imageUrl || "",
+          imageUrl: finalImageUrl || "",
           type: form.type || "student",
+          source: sourceType,
           updatedAt: serverTimestamp(),
         });
       } else {
@@ -131,8 +176,9 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
           text: form.text.trim(),
           stars: form.stars,
           gender: form.gender,
-          imageUrl: form.imageUrl || "",
+          imageUrl: finalImageUrl || "",
           type: form.type || "student",
+          source: sourceType,
           createdAt: serverTimestamp(),
           pending: true,
         });
@@ -182,6 +228,11 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
                   alt="profile"
                   className="img-fluid rounded-circle"
                   style={{ width: 88, height: 88, objectFit: "cover" }}
+                  onError={(e) => {
+                    if (form.imageUrl && form.imageUrl.includes("lh3.googleusercontent.com")) {
+                      e.target.src = PROFILE_ICONS.other;
+                    }
+                  }}
                 />
               ) : (
                 <div
@@ -301,23 +352,76 @@ const ShareYourStory = ({ onSubmitted, editData = null, onCancelEdit }) => {
             </div>
           )}
 
-          {showImageDialog === "upload" && (
+          {showImageDialog === "upload-method" && (
             <div className="text-center">
               <div
                 className="bg-light rounded-3 border p-4 shadow-sm"
-                style={{ maxWidth: 340, margin: "0 auto" }}
+                style={{ maxWidth: 400, margin: "0 auto" }}
               >
-                <p className="fw-semibold mb-3">Upload Profile Photo</p>
+                <p className="fw-semibold mb-3">Choose Upload Method</p>
+                
+                <div className="mb-3">
+                  <label className="form-label d-block mb-2">Select Upload Source:</label>
+                  <div className="d-flex justify-content-center gap-3">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="uploadSource"
+                        id="cloudinarySource"
+                        checked={uploadSource === "cloudinary"}
+                        onChange={() => setUploadSource("cloudinary")}
+                      />
+                      <label className="form-check-label" htmlFor="cloudinarySource">
+                        Upload Image
+                      </label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="uploadSource"
+                        id="driveSource"
+                        checked={uploadSource === "drive"}
+                        onChange={() => setUploadSource("drive")}
+                      />
+                      <label className="form-check-label" htmlFor="driveSource">
+                        Google Drive Link
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {uploadSource === "cloudinary" ? (
+                  <button
+                    type="button"
+                    className="btn btn-accent px-4 mb-2"
+                    onClick={uploadViaCloudinary}
+                    disabled={uploading}
+                  >
+                    {uploading ? "Uploading..." : "Upload Photo"}
+                  </button>
+                ) : (
+                  <div className="mb-3">
+                    <GoogleDriveImage onImageReady={handleDriveImageReady} />
+                    {driveImageUrl && (
+                      <div className="alert alert-success mt-2">
+                        <small>✓ Google Drive image ready</small>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-success px-4 mt-2"
+                      onClick={uploadViaGoogleDrive}
+                      disabled={!driveImageUrl}
+                    >
+                      Use Google Drive Image
+                    </button>
+                  </div>
+                )}
+
                 <button
-                  type="button"
-                  className="btn btn-accent px-4"
-                  onClick={handleUploadImg}
-                  disabled={uploading}
-                >
-                  {uploading ? "Uploading..." : "Upload"}
-                </button>
-                <button
-                  className="btn btn-link text-danger mt-2"
+                  className="btn btn-link text-danger mt-2 d-block"
                   type="button"
                   onClick={() => setShowImageDialog(null)}
                 >

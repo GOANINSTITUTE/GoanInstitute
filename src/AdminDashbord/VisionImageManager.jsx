@@ -7,6 +7,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import GoogleDriveImage from "./GoogleDriveImage";
 
 function Notification({ message, type, onClose }) {
   if (!message) return null;
@@ -51,6 +52,8 @@ function Notification({ message, type, onClose }) {
 function VisionImageManager() {
   const [image, setImage] = useState(null);
   const [notification, setNotification] = useState({ message: "", type: "success" });
+  const [imageSource, setImageSource] = useState("cloudinary"); // 'cloudinary' or 'url'
+  const [imageUrl, setImageUrl] = useState(""); // Final URL from GoogleDriveImage
   const docRef = doc(db, "visionImages", "visionImage"); // single document
 
   useEffect(() => {
@@ -73,37 +76,50 @@ function VisionImageManager() {
     }
   };
 
+  const saveImageToFirestore = async (finalImageUrl) => {
+    try {
+      const snapshot = await getDoc(docRef);
+      if (snapshot.exists()) {
+        await updateDoc(docRef, {
+          imageUrl: finalImageUrl,
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        await setDoc(docRef, {
+          imageUrl: finalImageUrl,
+          uploadedAt: serverTimestamp(),
+        });
+      }
+
+      showNotification("Image uploaded successfully!", "success");
+      setImage(finalImageUrl);
+      setImageUrl("");
+    } catch (err) {
+      console.error("Error saving image:", err);
+      showNotification("Failed to save image", "error");
+    }
+  };
+
   const handleUpload = async () => {
+    // 🔹 GOOGLE DRIVE (URL)
+    if (imageSource === "url") {
+      if (!imageUrl) {
+        showNotification("Please provide a valid Google Drive image", "error");
+        return;
+      }
+      saveImageToFirestore(imageUrl);
+      return;
+    }
+
+    // 🔹 CLOUDINARY
     const myWidget = window.cloudinary.createUploadWidget(
       {
         cloudName: "dqjcejidw",
-  uploadPreset: "goanins",
+        uploadPreset: "goanins",
       },
       async (error, result) => {
         if (!error && result && result.event === "success") {
-          try {
-            const newImage = result.info.secure_url;
-
-            // If no image yet, create one. Otherwise, update existing.
-            const snapshot = await getDoc(docRef);
-            if (snapshot.exists()) {
-              await updateDoc(docRef, {
-                imageUrl: newImage,
-                updatedAt: serverTimestamp(),
-              });
-            } else {
-              await setDoc(docRef, {
-                imageUrl: newImage,
-                uploadedAt: serverTimestamp(),
-              });
-            }
-
-            showNotification("Image uploaded successfully!", "success");
-            setImage(newImage);
-          } catch (err) {
-            console.error("Error saving image:", err);
-            showNotification("Failed to save image", "error");
-          }
+          saveImageToFirestore(result.info.secure_url);
         } else if (error) {
           console.error("Cloudinary error:", error);
           showNotification("Upload failed!", "error");
@@ -123,8 +139,23 @@ function VisionImageManager() {
 
       <h3 className="mb-3">Vision Mission Background Image Manager</h3>
 
+      {/* 🔹 Choose Image Source */}
       <div className="mb-3">
-        <button className="btn btn-success" onClick={handleUpload}>
+        <select
+          className="form-select mb-2"
+          value={imageSource}
+          onChange={(e) => setImageSource(e.target.value)}
+        >
+          <option value="cloudinary">Use Cloudinary Upload</option>
+          <option value="url">Use Google Drive Image</option>
+        </select>
+
+        {/* 🔹 Google Drive Component */}
+        {imageSource === "url" && (
+          <GoogleDriveImage onImageReady={(url) => setImageUrl(url)} />
+        )}
+
+        <button className="btn btn-success mt-2" onClick={handleUpload}>
           {image ? "Change Background Image" : "Upload Background Image"}
         </button>
       </div>
@@ -137,6 +168,10 @@ function VisionImageManager() {
               className="card-img-top"
               alt="Vision"
               style={{ maxHeight: "300px", objectFit: "cover" }}
+              onError={(e) => {
+                e.target.src =
+                  "https://via.placeholder.com/400x300?text=Image+Unavailable";
+              }}
             />
             <div className="card-body">
               <p className="card-text">Current Background Image</p>
