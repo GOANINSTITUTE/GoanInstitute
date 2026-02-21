@@ -9,6 +9,7 @@ import { collection, getDocs } from "firebase/firestore";
 import AnimatedHero from "../Components/AnimatedHero";
 import PageTransition from "../Components/PageTransition";
 import { motion } from "framer-motion";
+import PrincipalVideoTestimonials from "./PrincipalVideoTestimonials";
 
 const Loader = () => (
   <div className="loader-wrap">
@@ -200,31 +201,7 @@ const Testimonials = () => {
         <p className="mt-3"> The commendations our institution receives are a testament to a journey defined by dedication, hard work, and a deep commitment to educational excellence. Each heartfelt endorsement reflects the trust and impact we’ve cultivated over the past 17 years, highlighting the lives we’ve touched and the dreams we’ve helped others achieve. It hasn’t been an easy road; we’ve faced countless obstacles, made difficult choices, and tirelessly refined our vision and services. Yet, the satisfaction of knowing we’ve made a meaningful difference makes every step worthwhile. Our clients’ warm words of appreciation inspire us to strive for improvement every day. </p>
       </section>
 
-      {/* Video Section */}
-      <section className="py-5 honourable-section">
-        <div className="container">
-          <div className="row align-items-center gy-4">
-            <div className="col-md-6">
-              <div className="video-wrap">
-                <iframe
-                  title="YouTube Video"
-                  src="https://www.youtube.com/embed/TVKLVOHXtys?si=Y585_I_Rx1Td6F3d"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-
-            <div className="col-md-6 text-center text-md-start">
-              <h3 className="honourable-title">Words from</h3>
-              <div className="honourable-content">
-                <div className="honourable-large">HONOURABLE</div>
-                <div className="honourable-sub">School Principal</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PrincipalVideoTestimonials/>
 
       {/* Client Testimonials */}
       <section className="py-5 clients-section">

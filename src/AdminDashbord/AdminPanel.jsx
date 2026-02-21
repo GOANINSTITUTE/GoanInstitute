@@ -14,12 +14,33 @@ import ImageManager from "./imageManager";
 import PrincipalTestimonialsManager from "./PrincipalsTestimonialsManager";
 import GICEProfileManager from "./GICEProfileManager";
 import GalleryManager from "./GalleryManager";
+import PrincipalVideoTestimonials from "./PrincipalVideoManager"; 
 const options = [
   { key: "gicegallery", label: "Gallery Management", icon: <i class="bi bi-card-image" aria-hidden="true"></i> },
   { key: "hero", label: "Hero Section Image/Video", icon: <i class="bi bi-camera-video" aria-hidden="true"></i> },
-  { key: "testimonials", label: "Testimonials", icon: <i class="bi bi-chat-square-quote" aria-hidden="true"></i> },
-  { key: "videotestimonials", label: "Video Testimonials", icon:<i class="bi bi-camera-video-fill" aria-hidden="true"></i> },
-  { key: "Ptestimonial", label: "Principals Testimonials", icon: <i class="bi bi-person-badge"></i>  },
+  { 
+  key: "testimonials", 
+  label: "Testimonials", 
+  icon: <i className="bi bi-chat-quote" aria-hidden="true"></i> 
+},
+
+{ 
+  key: "videotestimonials", 
+  label: "Video Testimonials", 
+  icon: <i className="bi bi-play-btn" aria-hidden="true"></i> 
+},
+
+{ 
+  key: "Ptestimonial", 
+  label: "Principals Testimonials", 
+  icon: <i className="bi bi-person-lines-fill"></i>  
+},
+
+{ 
+  key: "PVtestimonial", 
+  label: "Principals Video Testimonials", 
+  icon: <i className="bi bi-camera-reels"></i>  
+},
   { key: "addadmin", label: "Add Admin User", icon: <i class="bi bi-person-plus" aria-hidden="true"></i> },
   { key: "vision", label: "Vision Mission", icon: <i class="bi bi-eye" aria-hidden="true"></i> },
   { key: "service", label: "Services", icon: <i class="bi bi-building" aria-hidden="true"></i> },
@@ -178,6 +199,7 @@ function AdminPanel() {
       {activeTab === "testimonials" && <TestimonialsManager />}
       {activeTab === "videotestimonials" && <VideoTestimonialsManager />}
       {activeTab === "Ptestimonial" && <PrincipalTestimonialsManager />}
+      {activeTab === "PVtestimonial" && <PrincipalVideoTestimonials/>}
       {activeTab === "giceprofile" && <GICEProfileManager />}
       {activeTab === "addadmin" && user && <AddAdminUser />}
       {activeTab === "service" && user && <ServiceManager />}
