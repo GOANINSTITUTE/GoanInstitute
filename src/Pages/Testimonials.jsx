@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
-import "./CSS/Testimonials.css";
-import { db } from "../firebase-config";
 import { collection, getDocs } from "firebase/firestore";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import AnimatedHero from "../Components/AnimatedHero";
 import PageTransition from "../Components/PageTransition";
-import { motion } from "framer-motion";
+import { db } from "../firebase-config";
+import "./CSS/Testimonials.css";
 import PrincipalVideoTestimonials from "./PrincipalVideoTestimonials";
 
 const Loader = () => (
