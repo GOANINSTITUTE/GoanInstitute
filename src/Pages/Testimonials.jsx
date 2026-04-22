@@ -23,7 +23,9 @@ const Testimonials = () => {
         setLoading(true);
 
         const snap = await getDocs(collection(db, "clientTestimonials"));
+        
         const data = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        console.log("tesing", data);
         setPrincipalTestimonials(data);
 
       } catch (error) {
