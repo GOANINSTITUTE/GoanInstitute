@@ -15,7 +15,13 @@ import PrincipalTestimonialsManager from "./PrincipalsTestimonialsManager";
 import GICEProfileManager from "./GICEProfileManager";
 import GalleryManager from "./GalleryManager";
 import PrincipalVideoTestimonials from "./PrincipalVideoManager"; 
+import MediaManager from "./MediaManager"; 
 const options = [
+  {
+  key: "media",
+  label: "Media Management",
+  icon: <i className="bi bi-collection-play" aria-hidden="true"></i>
+},
   { key: "gicegallery", label: "Gallery Management", icon: <i class="bi bi-card-image" aria-hidden="true"></i> },
   { key: "hero", label: "Hero Section Image/Video", icon: <i class="bi bi-camera-video" aria-hidden="true"></i> },
   { 
@@ -205,6 +211,7 @@ function AdminPanel() {
       {activeTab === "service" && user && <ServiceManager />}
       {activeTab === "vision" && <VisionImageManager />}
       {activeTab === "image" && <ImageManager />}
+      {activeTab === "media" && <MediaManager /> }
       {!activeTab && (
         <div className="text-center text-muted mt-5">
           <h4>Select an option above to manage content.</h4>

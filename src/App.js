@@ -20,6 +20,7 @@ import GICEProfile from './Pages/GICEProfile.jsx';
 import GICEFamily from './Pages/GICEFamily.jsx';
 import SSDP from './Pages/SDPP.jsx';
 import SSMO from './Pages/SSMO.jsx';
+import Media from './Pages/Media.jsx'; 
 // PrivateRoute component remains unchanged
 function PrivateRoute({ children }) {
   const [user, setUser] = useState(undefined);
@@ -78,6 +79,7 @@ function App() {
               <Route path="/testimonials" element={<Testimonials />} />
               <Route path="/profile" element={<GICEProfile />} />
               <Route path="/GICEFamily" element={<GICEFamily />} />
+              <Route path="/media" element={<Media />} /> 
               <Route path="/services/smart-scholar" element={<SSMO />} />
               <Route path="/services/regular-skill-development" element={<SSDP />} />
               <Route path="*" element={<Error />} />

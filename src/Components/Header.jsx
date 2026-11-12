@@ -26,8 +26,10 @@ const Header = () => {
       { name: "Smart Scholar Mission", path: "/services/smart-scholar" },
     ],
   },
+  { name: "Media", path: "/media" },
     { name: "Career Opportunities", path: "/careers" },
     { name: "Contact", path: "/contact" },
+    
   ];
 
   // 🔹 Scroll behavior
